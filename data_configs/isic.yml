@@ -1,5 +1,5 @@
 name: ISIC
-root_path: '/media/ubuntu/New Volume/jay/ISIC2018'
+root_path: '/media/ubuntu/New Volume/jay/skin_lesion/main
 label_list: [1]
 label_names: ['Lesion']
 volume_channel: 2

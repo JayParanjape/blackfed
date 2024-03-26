@@ -8,8 +8,8 @@ from torch.utils.data import Dataset
 from data_transforms.isic_transform import ISIC_Transform
 
 
-class ISIC2018_Dataset(Dataset):
-    def __init__(self, config, is_train=False, shuffle_list = True, apply_norm=True, no_text_mode=False, is_test=False) -> None:
+class Skin_Dataset(Dataset):
+    def __init__(self, config, is_train=False, shuffle_list = True, apply_norm=True, is_test=False, center_num=1) -> None:
         super().__init__()
         self.root_path = config['root_path']
         self.img_names = []
@@ -17,14 +17,17 @@ class ISIC2018_Dataset(Dataset):
         self.label_path_list = []
         self.label_list = []
         self.is_train = is_train
+        self.is_test = is_test
+        self.center_num = center_num
         self.label_names = config['label_names']
         self.num_classes = len(self.label_names)
         self.config = config
         self.apply_norm = apply_norm
-        self.no_text_mode = no_text_mode
-        self.is_test = is_test
 
-        self.populate_lists()
+        if center_num=='super':
+            self.populate_lists_super()
+        else:
+            self.populate_lists()
         if shuffle_list:
             p = [x for x in range(len(self.img_path_list))]
             random.shuffle(p)
@@ -41,33 +44,56 @@ class ISIC2018_Dataset(Dataset):
 
     def populate_lists(self):
         if self.is_train:
-            imgs_path = os.path.join(self.root_path, 'ISIC2018_Task1-2_Training_Input')
-            labels_path = os.path.join(self.root_path, 'ISIC2018_Task1_Training_GroundTruth')
-        # if self.is_train:
-        #     imgs_path = os.path.join(self.root_path, 'ISIC2018_Task1-2_TrainVal_Input')
-        #     labels_path = os.path.join(self.root_path, 'ISIC2018_Task1_TrainVal_GroundTruth')
+            imgs_path = os.path.join(self.root_path, 'C'+str(self.center_num), 'train.txt')
         else:
             if self.is_test:
-                imgs_path = os.path.join(self.root_path, 'ISIC2018_Task1-2_Test_Input')
-                labels_path = os.path.join(self.root_path, 'ISIC2018_Task1_Test_GroundTruth')
-
-            imgs_path = os.path.join(self.root_path, 'ISIC2018_Task1-2_Validation_Input')
-            labels_path = os.path.join(self.root_path, 'ISIC2018_Task1_Validation_GroundTruth')
-
-        for img in os.listdir(imgs_path):
-            if (('jpg' not in img) and ('jpeg not in img') and ('png' not in img)):
-                continue
-            if self.no_text_mode:
-                self.img_names.append(img)
-                self.img_path_list.append(os.path.join(imgs_path,img))
-                self.label_path_list.append(os.path.join(labels_path, img[:-4]+'_segmentation.png'))
-                self.label_list.append('')
+                imgs_path = os.path.join(self.root_path, 'C'+str(self.center_num), 'test.txt')
             else:
-                for label_name in self.label_names:
-                    self.img_names.append(img)
-                    self.img_path_list.append(os.path.join(imgs_path,img))
-                    self.label_path_list.append(os.path.join(labels_path, img[:-4]+'_segmentation.png'))
-                    self.label_list.append(label_name)
+                imgs_path = os.path.join(self.root_path, 'C'+str(self.center_num), 'val.txt')
+
+        imgs_root = os.path.join(self.root_path,'C'+str(self.center_num),'images')
+        masks_root = os.path.join(self.root_path,'C'+str(self.center_num),'masks')
+
+        im_list_file= open(imgs_path, 'r')
+        im_list = im_list_file.readlines()
+
+        for img in im_list:
+            img = img.strip()
+            # print(img)
+            if (('jpg' not in img) and ('jpeg not in img') and ('png' not in img) and ('bmp' not in img)):
+                continue
+            
+            self.img_names.append(img)
+            self.img_path_list.append(os.path.join(imgs_root,img))
+            self.label_path_list.append(os.path.join(masks_root, img[:-4]+"_segmentation.png"))
+            self.label_list.append('Lesion')
+    
+    def populate_lists_super(self):
+        if self.is_train:
+            imgs_path = os.path.join(self.root_path, 'super_train.txt')
+        else:
+            if self.is_test:
+                imgs_path = os.path.join(self.root_path, 'super_test.txt')
+            else:
+                imgs_path = os.path.join(self.root_path, 'super_val.txt')
+
+        im_list_file= open(imgs_path, 'r')
+        im_list = im_list_file.readlines()
+
+        for img in im_list:
+            img = img.strip()
+            sl_idx = img.find('/')
+            img_name = img[sl_idx+1:]
+            data_num = img[:sl_idx]
+            center_num = data_num[1:]
+
+            if (('jpg' not in img) and ('jpeg not in img') and ('png' not in img) and ('bmp' not in img)):
+                continue
+            
+            self.img_names.append(img_name)
+            self.img_path_list.append(os.path.join(self.root_path,data_num,'images' ,img_name))
+            self.label_path_list.append(os.path.join(self.root_path,data_num,'masks', img_name[:-4]+'_segmentation.png'))
+            self.label_list.append('Lesion')
 
 
     def __getitem__(self, index):
@@ -75,12 +101,9 @@ class ISIC2018_Dataset(Dataset):
         if self.config['volume_channel']==2:
             img = img.permute(2,0,1)
             
-        try:
-            label = torch.Tensor(np.array(Image.open(self.label_path_list[index])))
-            if len(label.shape)==3:
-                label = label[:,:,0]
-        except:
-            label = torch.zeros(img.shape[1], img.shape[2])
+        label = torch.Tensor(np.array(Image.open(self.label_path_list[index])))
+        if len(label.shape)==3:
+            label = label[:,:,0]
         
         label = label.unsqueeze(0)
         label = (label>0)+0
@@ -90,6 +113,5 @@ class ISIC2018_Dataset(Dataset):
         img, label = self.data_transform(img, label, is_train=self.is_train, apply_norm=self.apply_norm)
         label = (label>=0.5)+0
         label = label[0]
-
 
         return img, label, self.img_names[index], label_of_interest

@@ -38,7 +38,7 @@ def dice_batchwise(running_intersection, running_union, smooth =1):
 def compute_hd95(preds, gt):
     # print(preds.shape)
     # print(gt.shape)
-    cd = monai.metrics.compute_hausdorff_distance(preds.unsqueeze(1), gt.unsqueeze(1), include_background=False, percentile=95)
+    cd = monai.metrics.compute_hausdorff_distance(preds, gt, include_background=True, percentile=95)
     return cd.mean().item()
 
 
