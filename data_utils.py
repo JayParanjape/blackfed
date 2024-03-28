@@ -1,7 +1,7 @@
 from datasets.glas import GLAS_Dataset
 from datasets.kvasirseg import KVASIRSEG_Dataset
 from datasets.polypgen import PolypGen_Dataset
-from datasets.isic import ISIC2018_Dataset
+from datasets.isic import Skin_Dataset
 from datasets.refuge import Refuge_Dataset
 from datasets.rite import RITE_Dataset
 from datasets.endovis import Endovis_Dataset
@@ -60,10 +60,10 @@ def get_data(data_config, center_num=1):
         # print(dataset_sizes)
 
 
-    elif data_config['name']=='ISIC':
-        dataset_dict['train'] = ISIC2018_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], no_text_mode=data_config['no_text_mode'])
-        dataset_dict['val'] = ISIC2018_Dataset(data_config, shuffle_list=False, apply_norm=data_config['use_norm'], is_train=False, no_text_mode=data_config['no_text_mode'])
-        dataset_dict['test'] = ISIC2018_Dataset(data_config, shuffle_list=False, is_train=False, is_test=True, apply_norm=data_config['use_norm'], no_text_mode=data_config['no_text_mode'])
+    elif data_config['name']=='SKIN':
+        dataset_dict['train'] = Skin_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'])
+        dataset_dict['val'] = Skin_Dataset(data_config, shuffle_list=False, apply_norm=data_config['use_norm'], is_train=False)
+        dataset_dict['test'] = Skin_Dataset(data_config, shuffle_list=False, is_train=False, is_test=True, apply_norm=data_config['use_norm'])
 
         dataset_sizes['train'] = len(dataset_dict['train'])
         dataset_sizes['val'] = len(dataset_dict['val'])
