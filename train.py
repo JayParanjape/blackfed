@@ -39,10 +39,10 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
     logger.setLevel(logging.INFO)
 
     #set hyperparameters
-    num_epochs_server = 10
+    num_epochs_server = 1
     num_epochs_client = 20
-    bs = 32
-    lr_server = 1e-4
+    bs = 16
+    lr_server = 1e-3
     lr_client = 0.01
     sp_avg = 5
     ck = 0.01
@@ -52,7 +52,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
     tr_dataset, val_dataset = dataset_dict['train'], dataset_dict['val']
     best_val_loss = 10000
     best_tr_loss = 10000
-    print("debug: len tr dataset", len(tr_dataset))
+    # print("debug: len tr dataset", len(tr_dataset))
 
 
     #define loss function
@@ -133,7 +133,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
             epoch_loss = running_loss / ((count))
             epoch_dice = running_dice / ((len(tr_dataset)))
             # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-            print(f'Training at epoch {epoch} Loss: {epoch_loss:.4f} Dice: {epoch_dice:.4f}') 
+            print(f'Training at epoch {epoch} Train Loss: {epoch_loss:.4f} Train Dice: {epoch_dice:.4f}') 
 
         if epoch%20==0:
             running_loss = 0.0
@@ -171,13 +171,13 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                         hds.append(hd)
     
             #validation performance
-            print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
-            print(running_loss, intermediate_count)
-            print(running_loss/intermediate_count)
+            # print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
+            # print(running_loss, intermediate_count)
+            # print(running_loss/intermediate_count)
             epoch_loss = running_loss / ((count))
             epoch_dice = running_dice / ((len(tr_dataset)))
             # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-            print(f'Training server at epoch {epoch} Loss: {epoch_loss:.4f} Dice: {epoch_dice:.4f}') 
+            print(f'Training server at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}') 
                
             #save server
             if epoch_loss < best_val_loss:
@@ -288,13 +288,13 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                             hds.append(hd)
         
                 #validation performance
-                print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
-                print(running_loss, intermediate_count)
-                print(running_loss/intermediate_count)
+                # print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
+                # print(running_loss, intermediate_count)
+                # print(running_loss/intermediate_count)
                 epoch_loss = running_loss / ((count))
                 epoch_dice = running_dice / ((len(tr_dataset)))
                 # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-                print(f'Training client at epoch {epoch} Loss: {epoch_loss:.4f} Dice: {epoch_dice:.4f}')
+                print(f'Training client at epoch {epoch} Training Loss: {epoch_loss:.4f} Training Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}')
 
                 #save client
                 if epoch_loss < best_val_loss:

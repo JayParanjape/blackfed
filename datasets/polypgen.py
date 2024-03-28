@@ -65,7 +65,7 @@ class PolypGen_Dataset(Dataset):
             
             self.img_names.append(img)
             self.img_path_list.append(os.path.join(imgs_root,img))
-            self.label_path_list.append(os.path.join(masks_root, img))
+            self.label_path_list.append(os.path.join(masks_root, img[:-4]+"_mask.jpg"))
             self.label_list.append('Polyp')
     
     def populate_lists_super(self):
@@ -92,7 +92,7 @@ class PolypGen_Dataset(Dataset):
             
             self.img_names.append(img_name)
             self.img_path_list.append(os.path.join(self.root_path,data_num,'images_'+center_num,img_name))
-            self.label_path_list.append(os.path.join(self.root_path,data_num,'masks_'+center_num,img_name))
+            self.label_path_list.append(os.path.join(self.root_path,data_num,'masks_'+center_num,img_name[:-4]+'_mask.jpg'))
             self.label_list.append('Polyp')
 
 
@@ -101,12 +101,9 @@ class PolypGen_Dataset(Dataset):
         if self.config['volume_channel']==2:
             img = img.permute(2,0,1)
             
-        try:
-            label = torch.Tensor(np.array(Image.open(self.label_path_list[index])))
-            if len(label.shape)==3:
-                label = label[:,:,0]
-        except:
-            label = torch.zeros(img.shape[1], img.shape[2])
+        label = torch.Tensor(np.array(Image.open(self.label_path_list[index])))
+        if len(label.shape)==3:
+            label = label[:,:,0]
         
         label = label.unsqueeze(0)
         label = (label>0)+0
