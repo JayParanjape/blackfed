@@ -74,8 +74,8 @@ def train(server, clients, dataset_dicts, save_path, loss_string, device):
     dataloaders = []
     for i in range(len(dataset_dicts)):
         data_loader_client = {}
-        data_loader_client['train'] = iter(torch.utils.data.Dataloader(dataset_dicts[i]['train'], batch_size = bs, shuffle=True, num_workers=4))
-        data_loader_client['val'] = iter(torch.utils.data.DataLoader(dataset_dicts[i]['val'], batch_size=bs, shuffle=False, num_workers=4))
+        data_loader_client['train'] = (torch.utils.data.DataLoader(dataset_dicts[i]['train'], batch_size = bs, shuffle=True, num_workers=4))
+        data_loader_client['val'] = (torch.utils.data.DataLoader(dataset_dicts[i]['val'], batch_size=bs, shuffle=False, num_workers=4))
         dataloaders.append(data_loader_client)
     server_optimizer = optim.AdamW(server.parameters(), lr=float(lr_server))
 
@@ -86,7 +86,7 @@ def train(server, clients, dataset_dicts, save_path, loss_string, device):
         client_outs = []
         client_labels = []
         for j in range(len(dataloaders)):
-            inputs, labels,text_idxs, text = next(dataloaders[j]['train'])
+            inputs, labels,text_idxs, text = next(iter(dataloaders[j]['train']))
             if len(labels.shape)==3:
                 labels = labels.unsqueeze(1)
 
@@ -127,9 +127,9 @@ def train(server, clients, dataset_dicts, save_path, loss_string, device):
             # statistics
             dice = dice_coef(preds,client_labels)
                 
-        if epoch%5==0:
+        if i%5==0:
             # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-            print(f'Training at iteration {epoch} Train Loss: {loss:.4f} Train Dice: {dice:.4f}') 
+            print(f'Training at iteration {i} Train Loss: {loss:.4f} Train Dice: {dice:.4f}') 
 
             #save server
             if loss < best_tr_loss:

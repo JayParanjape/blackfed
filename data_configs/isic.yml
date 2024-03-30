@@ -1,5 +1,5 @@
 name: SKIN
-root_path: '/media/ubuntu/New Volume/jay/skin_lesion/main'
+root_path: '/mnt/store/jparanj1/skin_lesion'
 label_list: [1]
 label_names: ['Lesion']
 volume_channel: 2
@@ -9,7 +9,7 @@ no_text_mode: False
 data_transforms:
   a_min: 0
   a_max: 255
-  img_size: 512
+  img_size: 256
   use_random_crop: False
   use_rotation: True
   rotation_angle: 10

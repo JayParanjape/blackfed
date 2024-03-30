@@ -1,5 +1,5 @@
 name: POLYPGEN
-root_path: '/media/ubuntu/New Volume/jay/Polypgen/PolypGen2021_MultiCenterData_v3/PolypGen2021_MultiCenterData_v3'
+root_path: '/mnt/store/jparanj1/Polypgen/PolypGen2021_MultiCenterData_v3/PolypGen2021_MultiCenterData_v3'
 label_list: [1]
 label_names: ['Polyp']
 volume_channel: 2
@@ -8,7 +8,7 @@ no_text_mode: False
 data_transforms:
   a_min: 0
   a_max: 255
-  img_size: 512
+  img_size: 256
   use_random_crop: False
   use_rotation: True
   rotation_angle: 10

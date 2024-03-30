@@ -13,8 +13,6 @@ datasets_list = [1, 2, 3, 4, 5, 6]
 clients = []
 datasets = []
 device = sys.argv[1]
-center_num = (sys.argv[2])
-only_test = (sys.argv[3]=='True')
 
 for i in range(len(datasets_list)):
     clients.append(UNet_Client(3))
