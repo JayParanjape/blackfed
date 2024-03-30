@@ -9,7 +9,7 @@ from data_utils import get_data
 import yaml
 
 
-datasets_list = [1, 2, 3, 4, 5, 6]
+datasets_list = [1, 2, 3]
 clients = []
 datasets = []
 device = sys.argv[1]
@@ -18,7 +18,7 @@ for i in range(len(datasets_list)):
     clients.append(UNet_Client(3))
 server = UNet_Server(1)
 
-with open('../../data_configs/polypgen.yml', 'r') as f:
+with open('../../data_configs/isic.yml', 'r') as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 
 for i in range(len(datasets_list)):
