@@ -167,6 +167,7 @@ def train(model, dataset_dict, save_path, loss_string, device):
             if epoch_loss < best_val_loss:
                 best_val_loss = epoch_loss
                 torch.save(model.state_dict(), os.path.join(save_path,'model_best_val.pth'))
+    return model
     
     
 def test(model, dataset_dict, load_path, loss_string, device):
@@ -251,4 +252,5 @@ if __name__ == '__main__':
         model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
     else:
         #only test - give load path for model instead of save path
-        model = test(model, dataset_dict, load_path = './baselines/skin/skin_baseline_super/model_best_val.pth', loss_string='bce + dice', device=device)
+        # model = test(model, dataset_dict, load_path = './skin_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
+        model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(2)+'/model_best_val.pth', loss_string='bce + dice', device=device)
