@@ -174,7 +174,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
             # print(running_loss, intermediate_count)
             # print(running_loss/intermediate_count)
             epoch_loss = running_loss / ((count))
-            epoch_dice = running_dice / ((len(tr_dataset)))
+            epoch_dice = running_dice / ((len(dataset_dict['val'])))
             # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
             print(f'Training server at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}') 
                
@@ -254,7 +254,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                 intermediate_count = 0
                 count = 0
                 hds = []
-                for inputs, labels,text_idxs, text in dataloaders['train']:
+                for inputs, labels,text_idxs, text in dataloaders['val']:
                 # for inputs, labels,text_idxs, text, pt, pt_label in dataloaders[phase]:
                     if len(labels.shape)==3:
                         labels = labels.unsqueeze(1)
@@ -291,7 +291,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                 # print(running_loss, intermediate_count)
                 # print(running_loss/intermediate_count)
                 epoch_loss = running_loss / ((count))
-                epoch_dice = running_dice / ((len(tr_dataset)))
+                epoch_dice = running_dice / ((len(dataset_dict['val'])))
                 # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
                 print(f'Training client at epoch {epoch} Training Loss: {epoch_loss:.4f} Training Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}')
 
@@ -341,7 +341,7 @@ def test(server, client, dataset_dict, device):
     # print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
     # print(running_loss, intermediate_count)
     # print(running_loss/intermediate_count)
-    epoch_dice = running_dice / count
+    epoch_dice = running_dice / dataset_dict['test']
     # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
     print(f'Testing {dataset_dict["name"]}: Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}')
 
