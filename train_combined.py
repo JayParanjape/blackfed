@@ -141,6 +141,7 @@ def train(server, clients, dataset_dicts, save_path, loss_string, device):
     #train client
     with torch.no_grad():
         for i in range(len(clients)):
+            client = clients[i]
             for epoch in range(num_epochs_client):
                 running_loss = 0.0
                 running_intersection = 0
@@ -253,11 +254,11 @@ def train(server, clients, dataset_dicts, save_path, loss_string, device):
                     #save client
                     if epoch_loss < best_val_loss:
                         best_val_loss = epoch_loss
-                        torch.save(client.state_dict(), os.path.join(save_path,'client_'+str(j)+'_best_val.pth'))
+                        torch.save(client.state_dict(), os.path.join(save_path,'client_'+str(i)+'_best_val.pth'))
     
-            torch.save(client.state_dict(), './tmp_client_'+str(j)+'.pth')
+            torch.save(client.state_dict(), './tmp_client_'+str(i)+'.pth')
 
-    return server, client
+    # return server, clients
 
 def test(server, client, dataset_dict, device):
     server = server.to(device)

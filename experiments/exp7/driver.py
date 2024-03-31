@@ -1,8 +1,8 @@
 import sys
 sys.path.append("../..")
 
-from train_combined_white import train as combined_white_train
-from train_combined_white import test
+from train import train, test
+from train_combined import train as combined_train
 import torch
 from model import UNet_Server, UNet_Client
 from data_utils import get_data
@@ -33,7 +33,7 @@ for i in range(num_meta_epochs):
         for j in range(len(datasets_list)):        
             clients[j].load_state_dict(torch.load('./tmp_client_'+str(j)+'.pth'))
 
-    combined_white_train(server, clients, datasets, save_path='./saved_models/', loss_string='bce + dice', device=device)
+    combined_train(server, clients, datasets, save_path='./saved_models/', loss_string='bce + dice', device=device)
     torch.cuda.empty_cache()
         
 
