@@ -101,6 +101,78 @@ class BlackSplit(nn.Module):
         return out
 
 
+class NoLabel_UNet_Server(nn.Module):
+    def __init__(self, start_channels, num_layers):
+        super().__init__()
+        self.start_channels = start_channels
+        self.num_layers = num_layers
+        self.encoder_layers = nn.ModuleList([])
+        self.decoder_layers = nn.ModuleList([])
+        for i in range(num_layers):
+            self.encoder_layers.append(Down(self.start_channels*(2**(i)), self.start_channels*(2**(i+1))))
+            self.decoder_layers.append(Up(self.start_channels*(2**(num_layers-i)), self.start_channels*(2**(num_layers-i-1))))
+
+    def forward(self, x):
+        #here, x is a BXCXHXW feature map
+        xn = [x]
+        for i in range(len(self.encoder_layers)):
+            if i==len(self.encoder_layers)-1:
+                x_last = self.encoder_layers[i](xn[-1])
+            else:
+                xn.append(self.encoder_layers[i](xn[-1]))
+        
+        for i in range(len(self.decoder_layers)):
+            if i==0:
+                x_out = self.decoder_layers(x_last, xn[-1])
+            else:
+                x_out = self.decoder_layers(x_out, xn[-i-1])
+        
+        return x_out
+
+
+class NoLabel_UNet_Client(nn.Module):
+    def __init__(self, start_channels, num_layers, num_classes):
+        super().__init__()
+        self.start_channels = start_channels
+        self.num_layers = num_layers
+        self.num_classes = num_classes
+        self.encoder_layers = nn.ModuleList([])
+        self.decoder_layers = nn.ModuleList([])
+
+        self.inc = DoubleConv(3, self.start_channels)
+
+        for i in range(num_layers):
+            self.encoder_layers.append(Down(self.start_channels*(2**(i)), self.start_channels*(2**(i+1))))
+            self.decoder_layers.append(Up(self.start_channels*(2**(num_layers-i)), self.start_channels*(2**(num_layers-i-1))))
+
+        self.send_channels = self.start_channels*(2**(self.num_layers))
+        self.outc = (OutConv(self.start_channels, self.num_classes))
+
+
+    def forward(self, x, mode):
+        #here, x is a BXCXHXW feature map
+        #mode: ['encode', 'decode']
+        x = self.inc(x)
+        if mode=='encode':
+            xn = [x]
+            for i in range(len(self.encoder_layers)):
+                if i==len(self.encoder_layers)-1:
+                    x_last = self.encoder_layers[i](xn[-1])
+                else:
+                    xn.append(self.encoder_layers[i](xn[-1]))
+            self.xn = xn
+            return x_last
+        
+        else:        
+            x_out = x
+            for i in range(len(self.decoder_layers)):
+                x_out = self.decoder_layers(x_out, xn[-i-1])
+            
+            logits = self.outc(x_out)
+            sigmoid_logits = F.sigmoid(logits)
+                    
+            return sigmoid_logits
+            
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
 
@@ -138,7 +210,7 @@ class Down(nn.Module):
 class Up(nn.Module):
     """Upscaling then double conv"""
 
-    def __init__(self, in_channels, out_channels, bilinear=True):
+    def __init__(self, in_channels, out_channels, bilinear=False):
         super().__init__()
 
         # if bilinear, use the normal convolutions to reduce the number of channels
