@@ -32,7 +32,7 @@ class Loss_fxn():
 
 
 #training baselines includes the model without any split learning
-def train(model, dataset_dict, save_path, loss_string, device):
+def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000, center_num=0):
     model = model.to(device)
     os.makedirs(save_path, exist_ok=True)    
     #set up logger
@@ -51,12 +51,11 @@ def train(model, dataset_dict, save_path, loss_string, device):
     if 'bce' in loss_string:
         losses_list.append(nn.BCELoss())
     loss_fxn = Loss_fxn(losses_list)
-    print("debug: loss loaded")
+    print("debug: loss loaded, device: ", device)
 
     #control parameter for doing only testing
 
     #set hyperparameters
-    num_epochs = 2000
     bs = 8
     lr = 1e-3
 
@@ -68,7 +67,7 @@ def train(model, dataset_dict, save_path, loss_string, device):
     #train model
     best_val_loss = 100000000
     best_tr_loss = 1000000000
-    for epoch in range(num_epochs):
+    for epoch in range(1,num_epochs+1):
         running_loss = 0.0
         running_intersection = 0
         running_union = 0
@@ -124,7 +123,7 @@ def train(model, dataset_dict, save_path, loss_string, device):
             logger.info('Training at epoch %d Train Loss: %f Train Dice: %f', epoch, epoch_loss, epoch_dice)
 
         #check validation performance
-        if epoch%10==0:
+        if epoch%2==0:
             running_loss = 0.0
             running_dice = 0
             intermediate_count = 0
@@ -166,7 +165,7 @@ def train(model, dataset_dict, save_path, loss_string, device):
             #save model
             if epoch_loss < best_val_loss:
                 best_val_loss = epoch_loss
-                torch.save(model.state_dict(), os.path.join(save_path,'model_best_val.pth'))
+                torch.save(model.state_dict(), os.path.join(save_path,'client_'+str(int(center_num)-1)+'_best_val.pth'))
     return model
     
     
@@ -235,11 +234,20 @@ if __name__ == '__main__':
     device = sys.argv[1]
     center_num = (sys.argv[2])
     only_test = (sys.argv[3]=='True')
+    fed_learning = (sys.argv[4]=='True')
+    config_file = sys.argv[5]
+    if fed_learning or sys.argv[6]:
+        num_epochs = int(sys.argv[6])
+    else:
+        num_epochs=2000
     
     model = UNet(n_channels=3, n_classes=1)
-    # with open('data_configs/isic.yml', 'r') as f:
-    with open('data_configs/polypgen.yml', 'r') as f:
+    if fed_learning:
+        model.load_state_dict(torch.load('./fed_learning_model.pth'))
 
+    # with open('data_configs/isic.yml', 'r') as f:
+    # with open('data_configs/polypgen.yml', 'r') as f:
+    with open(config_file, 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     if center_num=='super':
         dataset_dict = get_data(config, center_num='super')
@@ -248,9 +256,15 @@ if __name__ == '__main__':
 
     #only train
     if not only_test:
-        model = train(model, dataset_dict, save_path = './baselines/polyp/polyp_baseline_'+str(center_num)+'/', loss_string='bce + dice', device=device)
-        model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
+        # model = train(model, dataset_dict, save_path = './baselines/polyp/polyp_baseline_'+str(center_num)+'/', loss_string='bce + dice', device=device, num_epochs=num_epochs)
+        # model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
+        model = train(model, dataset_dict, save_path = './saved_models' , loss_string='bce + dice', device=device, num_epochs=num_epochs, center_num=center_num)
+        model = test(model, dataset_dict, load_path = './saved_models/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='bce + dice', device=device)
     else:
         #only test - give load path for model instead of save path
         # model = test(model, dataset_dict, load_path = './skin_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
-        model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(2)+'/model_best_val.pth', loss_string='bce + dice', device=device)
+        # model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(2)+'/model_best_val.pth', loss_string='bce + dice', device=device)
+        # model = test(model, dataset_dict, load_path = './saved_models/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='bce + dice', device=device)
+        model = test(model, dataset_dict, load_path = './experiments/exp9/fed_learning_model.pth', loss_string='bce + dice', device=device)
+
+

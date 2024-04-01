@@ -180,5 +180,9 @@ if __name__ == '__main__':
     # plt.show()
         
     dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3, 4, 5, 6]]
-    visualize_PCA(dataset_dicts)
+    for i in range(len(dataset_dicts)):
+        l = len(dataset_dicts[i]['train'])
+        print(f'data center {i+1} has {l} training points')
+
+    # visualize_PCA(dataset_dicts)
 
