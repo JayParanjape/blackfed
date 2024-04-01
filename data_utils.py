@@ -8,7 +8,11 @@ from datasets.endovis import Endovis_Dataset
 from datasets.chestxdet import ChestXDet_Dataset
 from torch.utils.data import DataLoader
 import yaml
+import torch
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
 import sys
 # sys.path.append('../endovis17')
 
@@ -127,15 +131,58 @@ def get_data(data_config, center_num=1):
 
     return dataset_dict
 
+def visualize_PCA(dataset_dicts, phase='train'):
+    images_centers = []
+    c = ['red', 'green', 'blue', 'black', 'yellow', 'cyan']
+    for i in range(len(dataset_dicts)):
+        data = dataset_dicts[i][phase]
+        images = []
+        count = 0
+        for img,_,_,_ in data:
+            count+=1
+            # if count>5:
+            #     continue
+            images.append(img)
+        l = len(images)
+        images = torch.stack(images,dim=0).permute(0,2,3,1).cpu().numpy().reshape((l,-1))
+
+        # Scale data before applying PCA
+        scaling=StandardScaler()
+        
+        # Use fit and transform method 
+        scaling.fit(images)
+        Scaled_data=scaling.transform(images)
+        
+        # Set the n_components=3
+        principal=PCA(n_components=2)
+        principal.fit(images)
+        x=principal.transform(images)
+        images_centers.append(x)
+
+        #visualization
+        plt.scatter(x=x[:,0], y=x[:,1],c=c[i])
+    
+    plt.legend(['C'+str(i+1) for i in range(len(dataset_dicts))])
+    plt.savefig("./tmp2.png")
+
+
 
 if __name__ == '__main__':
     with open(sys.argv[1], 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
-    dataset_dict = get_data(config, center_num=1)
-    print(dataset_dict['train'][0][0].shape)
-    print(dataset_dict['train'][0][1].shape)
-    print(dataset_dict['train'][52][1].any())
-    plt.imshow(dataset_dict['train'][0][0].permute(1,2,0))
-    plt.show()
-    plt.imshow(dataset_dict['train'][0][1], cmap='gray')
-    plt.show()
+    # dataset_dict = get_data(config, center_num=1)
+    # print(dataset_dict['train'][0][0].shape)
+    # print(dataset_dict['train'][0][1].shape)
+    # print(dataset_dict['train'][52][1].any())
+    # plt.imshow(dataset_dict['train'][0][0].permute(1,2,0))
+    # plt.show()
+    # plt.imshow(dataset_dict['train'][0][1], cmap='gray')
+    # plt.show()
+        
+    dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3, 4, 5, 6]]
+    for i in range(len(dataset_dicts)):
+        l = len(dataset_dicts[i]['train'])
+        print(f'data center {i+1} has {l} training points')
+
+    # visualize_PCA(dataset_dicts)
+

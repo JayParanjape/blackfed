@@ -27,24 +27,17 @@ for i in range(len(datasets_list)):
     
 num_meta_epochs = 10
 for i in range(num_meta_epochs):
-    for j in range(len(datasets_list)):
-        try:
-            server.load_state_dict(torch.load('./tmp_server.pth'))
-        except:
-            pass
-            
-        try:
+    if i>0:
+        server.load_state_dict(torch.load('./tmp_server.pth'))
+        for j in range(len(datasets_list)):            
             clients[j].load_state_dict(torch.load('./tmp_client_'+str(j)+'.pth'))
-        except:
-            pass
 
-        print("Training for dataset ", datasets_list[j], " mega epoch ",i)
-        server, clients[j] = combined_train(server, clients, datasets, save_path='./saved_models/', loss_string='bce + dice', device=device)
-        torch.cuda.empty_cache()
+    combined_train(server, clients, datasets, save_path='./saved_models/', loss_string='bce + dice', device=device)
+    torch.cuda.empty_cache()
         
 
 #testing
 for j in range(len(datasets_list)):
     server.load_state_dict(torch.load('./tmp_server.pth'))
-    clients[j].load_state_dict(torch.load('./saved_models'+'/client_'+str(j)+'_best_val.pth'))
+    clients[j].load_state_dict(torch.load('.'+'/tmp_client_'+str(j)+'.pth'))
     test(server, clients[j], datasets[j], device='cuda:0')
