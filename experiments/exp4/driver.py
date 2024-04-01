@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../..")
 
-from train import train, test
+from train_combined import test
 from train_combined import train as combined_train
 import torch
 from model import UNet_Server, UNet_Client
@@ -39,5 +39,6 @@ for i in range(num_meta_epochs):
 #testing
 for j in range(len(datasets_list)):
     server.load_state_dict(torch.load('./tmp_server.pth'))
-    clients[j].load_state_dict(torch.load('.'+'/tmp_client_'+str(j)+'.pth'))
-    test(server, clients[j], datasets[j], device='cuda:0')
+    clients[j].load_state_dict(torch.load('./saved_models'+'/client_'+str(j)+'_best_val.pth'))
+    # clients[j].load_state_dict(torch.load('.'+'/tmp_client_'+str(j)+'.pth'))
+    test(server, clients[j], datasets[j], device=device)

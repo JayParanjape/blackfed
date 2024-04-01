@@ -41,4 +41,4 @@ for i in range(num_meta_epochs):
 for j in range(len(datasets_list)):
     server.load_state_dict(torch.load('./tmp_server.pth'))
     clients[j].load_state_dict(torch.load('.'+'/tmp_client_'+str(j)+'.pth'))    
-    test(server, clients[j], datasets[j], device='cuda:0')
+    test(server, clients[j], datasets[j], device=device)

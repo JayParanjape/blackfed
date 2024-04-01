@@ -296,7 +296,7 @@ def test(server, client, dataset_dict, device):
     # print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
     # print(running_loss, intermediate_count)
     # print(running_loss/intermediate_count)
-    epoch_dice = running_dice / dataset_dict['test']
+    epoch_dice = running_dice / len(dataset_dict['test'])
     # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
     print(f'Testing {dataset_dict["name"]}: Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}')
 

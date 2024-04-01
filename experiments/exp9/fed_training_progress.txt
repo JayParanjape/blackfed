@@ -1,0 +1,91 @@
+Testing model on center 1 Test Loss: 10.4916 Test Dice: 0.0198 HD95 avg: nan
+Testing model on center 1 Test Loss: 10.3807 Test Dice: 0.0198 HD95 avg: nan
+Testing model on center 2 Test Loss: 9.3719 Test Dice: 0.1316 HD95 avg: nan
+Testing model on center 3 Test Loss: 9.5221 Test Dice: 0.0009 HD95 avg: nan
+Testing model on center 4 Test Loss: 8.7346 Test Dice: 0.4358 HD95 avg: nan
+Testing model on center 5 Test Loss: 8.3061 Test Dice: 0.0012 HD95 avg: nan
+Testing model on center 6 Test Loss: 7.4941 Test Dice: 0.0016 HD95 avg: nan
+
+Next epoch
+
+Testing model on center 1 Test Loss: 5.3185 Test Dice: 0.4352 HD95 avg: 72.72868347167969
+Testing model on center 2 Test Loss: 4.3240 Test Dice: 0.4876 HD95 avg: 47.933349609375
+Testing model on center 3 Test Loss: 4.3255 Test Dice: 0.4950 HD95 avg: 65.3176040649414
+Testing model on center 4 Test Loss: 6.4947 Test Dice: 0.2309 HD95 avg: nan
+Testing model on center 5 Test Loss: 5.7754 Test Dice: 0.3146 HD95 avg: 94.14553833007812
+Testing model on center 6 Test Loss: 3.3505 Test Dice: 0.3851 HD95 avg: 62.08760452270508
+
+Next epoch
+
+Testing model on center 1 Test Loss: 4.4189 Test Dice: 0.5105 HD95 avg: 54.56916427612305
+Testing model on center 2 Test Loss: 3.4601 Test Dice: 0.5787 HD95 avg: 45.503475189208984
+Testing model on center 3 Test Loss: 3.2833 Test Dice: 0.5815 HD95 avg: 46.57785415649414
+Testing model on center 4 Test Loss: 6.6192 Test Dice: 0.2531 HD95 avg: nan
+Testing model on center 5 Test Loss: 5.1635 Test Dice: 0.3194 HD95 avg: 92.78451538085938
+Testing model on center 6 Test Loss: 2.5864 Test Dice: 0.4496 HD95 avg: 65.3362808227539
+
+Next epoch
+
+Testing model on center 1 Test Loss: 4.4827 Test Dice: 0.5105 HD95 avg: 73.7184066772461
+Testing model on center 2 Test Loss: 3.2201 Test Dice: 0.5911 HD95 avg: 57.56056594848633
+Testing model on center 3 Test Loss: 2.7030 Test Dice: 0.5891 HD95 avg: 42.2639045715332
+Testing model on center 4 Test Loss: 6.2332 Test Dice: 0.3497 HD95 avg: nan
+Testing model on center 5 Test Loss: 4.9449 Test Dice: 0.3736 HD95 avg: 67.44629669189453
+Testing model on center 6 Test Loss: 2.2434 Test Dice: 0.4922 HD95 avg: 82.9698715209961
+
+Next epoch
+
+Testing model on center 1 Test Loss: 4.5485 Test Dice: 0.5269 HD95 avg: 58.153656005859375
+Testing model on center 2 Test Loss: 2.5007 Test Dice: 0.6522 HD95 avg: 53.196044921875
+Testing model on center 3 Test Loss: 2.3169 Test Dice: 0.6416 HD95 avg: 51.06301498413086
+Testing model on center 4 Test Loss: 5.4414 Test Dice: 0.3321 HD95 avg: nan
+Testing model on center 5 Test Loss: 4.6503 Test Dice: 0.3886 HD95 avg: 86.2365951538086
+Testing model on center 6 Test Loss: 2.3403 Test Dice: 0.5177 HD95 avg: 29.614246368408203
+
+Next epoch
+
+Testing model on center 1 Test Loss: 4.7596 Test Dice: 0.5269 HD95 avg: 56.36703872680664
+Testing model on center 2 Test Loss: 2.4561 Test Dice: 0.6811 HD95 avg: 31.5408935546875
+Testing model on center 3 Test Loss: 2.2753 Test Dice: 0.6826 HD95 avg: 39.82036590576172
+Testing model on center 4 Test Loss: 6.2126 Test Dice: 0.4100 HD95 avg: nan
+Testing model on center 5 Test Loss: 4.0152 Test Dice: 0.4386 HD95 avg: 85.6091537475586
+Testing model on center 6 Test Loss: 1.9531 Test Dice: 0.5395 HD95 avg: 43.70507049560547
+
+Next epoch
+
+Testing model on center 1 Test Loss: 4.3787 Test Dice: 0.5392 HD95 avg: 45.3693962097168
+Testing model on center 2 Test Loss: 2.3470 Test Dice: 0.6977 HD95 avg: 31.313579559326172
+Testing model on center 3 Test Loss: 2.4054 Test Dice: 0.6821 HD95 avg: 32.24799728393555
+Testing model on center 4 Test Loss: 5.7048 Test Dice: 0.4052 HD95 avg: nan
+Testing model on center 5 Test Loss: 3.6334 Test Dice: 0.4714 HD95 avg: 67.70706176757812
+Testing model on center 6 Test Loss: 1.9030 Test Dice: 0.5920 HD95 avg: 48.88706970214844
+
+Next epoch
+
+Testing model on center 1 Test Loss: 3.8881 Test Dice: 0.5680 HD95 avg: 51.72330856323242
+Testing model on center 2 Test Loss: 2.0596 Test Dice: 0.6986 HD95 avg: 26.7357177734375
+Testing model on center 3 Test Loss: 2.2101 Test Dice: 0.6753 HD95 avg: 37.149314880371094
+Testing model on center 4 Test Loss: 6.1058 Test Dice: 0.4075 HD95 avg: nan
+Testing model on center 5 Test Loss: 4.3605 Test Dice: 0.4367 HD95 avg: 81.11114501953125
+Testing model on center 6 Test Loss: 2.1558 Test Dice: 0.5225 HD95 avg: 55.997657775878906
+
+Next epoch
+
+Testing model on center 1 Test Loss: 4.4310 Test Dice: 0.5330 HD95 avg: 51.09646224975586
+Testing model on center 2 Test Loss: 2.3602 Test Dice: 0.6795 HD95 avg: 30.058151245117188
+Testing model on center 3 Test Loss: 2.2429 Test Dice: 0.6704 HD95 avg: 27.393030166625977
+Testing model on center 4 Test Loss: 5.0775 Test Dice: 0.4687 HD95 avg: nan
+Testing model on center 5 Test Loss: 4.0609 Test Dice: 0.4501 HD95 avg: 65.93343353271484
+Testing model on center 6 Test Loss: 1.8043 Test Dice: 0.5192 HD95 avg: nan
+
+Next epoch
+
+Testing model on center 1 Test Loss: 4.2360 Test Dice: 0.5588 HD95 avg: nan
+Testing model on center 2 Test Loss: 2.1335 Test Dice: 0.6655 HD95 avg: 35.4149055480957
+Testing model on center 3 Test Loss: 2.5236 Test Dice: 0.6836 HD95 avg: 27.1997127532959
+Testing model on center 4 Test Loss: 5.1301 Test Dice: 0.4292 HD95 avg: nan
+Testing model on center 5 Test Loss: 4.1330 Test Dice: 0.4793 HD95 avg: 70.48455810546875
+Testing model on center 6 Test Loss: 2.1459 Test Dice: 0.5249 HD95 avg: 40.472068786621094
+
+Next epoch
+

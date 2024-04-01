@@ -51,7 +51,7 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
     if 'bce' in loss_string:
         losses_list.append(nn.BCELoss())
     loss_fxn = Loss_fxn(losses_list)
-    print("debug: loss loaded, device: ", device)
+    # print("debug: loss loaded, device: ", device)
 
     #control parameter for doing only testing
 
@@ -169,7 +169,7 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
     return model
     
     
-def test(model, dataset_dict, load_path, loss_string, device):
+def test(model, dataset_dict, load_path, loss_string, device, center_num='0'):
     #test on test dataset
     model = model.to(device)
     model.load_state_dict(torch.load(load_path), strict=True)
@@ -183,7 +183,7 @@ def test(model, dataset_dict, load_path, loss_string, device):
     if 'bce' in loss_string:
         losses_list.append(nn.BCELoss())
     loss_fxn = Loss_fxn(losses_list)
-    print("debug: loss loaded")
+    # print("debug: loss loaded")
 
     running_loss = 0.0
     running_dice = 0
@@ -224,7 +224,7 @@ def test(model, dataset_dict, load_path, loss_string, device):
     epoch_loss = running_loss / ((count))
     epoch_dice = running_dice / ((len(dataset_dict['test'])))
     # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-    print(f'Testing model Test Loss: {epoch_loss:.4f} Test Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}') 
+    print(f'Testing model on center {str(center_num)} Test Loss: {epoch_loss:.4f} Test Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}') 
 
     return model
 
@@ -240,6 +240,7 @@ if __name__ == '__main__':
         num_epochs = int(sys.argv[6])
     else:
         num_epochs=2000
+    load_path =sys.argv[7]
     
     model = UNet(n_channels=3, n_classes=1)
     if fed_learning:
@@ -265,6 +266,6 @@ if __name__ == '__main__':
         # model = test(model, dataset_dict, load_path = './skin_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
         # model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(2)+'/model_best_val.pth', loss_string='bce + dice', device=device)
         # model = test(model, dataset_dict, load_path = './saved_models/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='bce + dice', device=device)
-        model = test(model, dataset_dict, load_path = './experiments/exp9/fed_learning_model.pth', loss_string='bce + dice', device=device)
+        model = test(model, dataset_dict, load_path = load_path, loss_string='bce + dice', device=device, center_num=center_num)
 
 

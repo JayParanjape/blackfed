@@ -24,20 +24,21 @@ for i in range(len(datasets_list)):
     datasets.append(get_data(config, datasets_list[i]))
 
     
-num_meta_epochs = 10
-for i in range(num_meta_epochs):
-    for j in range(len(datasets_list)):
-        if i>0:
-            server.load_state_dict(torch.load('./tmp_server.pth'))
+# num_meta_epochs = 10
+# for i in range(num_meta_epochs):
+#     for j in range(len(datasets_list)):
+#         if i>0:
+#             server.load_state_dict(torch.load('./tmp_server.pth'))
                 
-            clients[j].load_state_dict(torch.load('./tmp_client_'+str(j)+'.pth'))
+#             clients[j].load_state_dict(torch.load('./tmp_client_'+str(j)+'.pth'))
 
-        print("Training for dataset ", datasets_list[j], " mega epoch ",i)
-        server, clients[j] = train(server, clients[j], datasets[j], j, save_path='./saved_models/'+str(datasets_list[j]), loss_string='bce + dice', device=device )
-        torch.cuda.empty_cache()
+#         print("Training for dataset ", datasets_list[j], " mega epoch ",i)
+#         server, clients[j] = train(server, clients[j], datasets[j], j, save_path='./saved_models/'+str(datasets_list[j]), loss_string='bce + dice', device=device )
+#         torch.cuda.empty_cache()
 
 #testing
 for j in range(len(datasets_list)):
     server.load_state_dict(torch.load('./tmp_server.pth'))
-    clients[j].load_state_dict(torch.load('./saved_models_max/'+str(datasets_list[j])+'/client_best_val.pth'))
-    test(server, clients[j], datasets[j], device='cuda:0')
+    # clients[j].load_state_dict(torch.load('./saved_models/'+str(datasets_list[j])+'/client_best_val.pth'))
+    clients[j].load_state_dict(torch.load('.'+'/tmp_client_'+str(j)+'.pth'))
+    test(server, clients[j], datasets[j], device=device)

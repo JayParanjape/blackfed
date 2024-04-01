@@ -17,7 +17,7 @@ import sys
 # sys.path.append('../endovis17')
 
 def get_data(data_config, center_num=1):
-    print(data_config)
+    # print(data_config)
     dataset_dict = {}
     dataset_sizes = {}
     dataloader_dict = {}
@@ -65,9 +65,10 @@ def get_data(data_config, center_num=1):
 
 
     elif data_config['name']=='SKIN':
-        dataset_dict['train'] = Skin_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'])
-        dataset_dict['val'] = Skin_Dataset(data_config, shuffle_list=False, apply_norm=data_config['use_norm'], is_train=False)
-        dataset_dict['test'] = Skin_Dataset(data_config, shuffle_list=False, is_train=False, is_test=True, apply_norm=data_config['use_norm'])
+        dataset_dict['train'] = Skin_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], center_num=center_num)
+        dataset_dict['val'] = Skin_Dataset(data_config, shuffle_list=False, apply_norm=data_config['use_norm'], is_train=False, center_num=center_num)
+        dataset_dict['test'] = Skin_Dataset(data_config, shuffle_list=False, is_train=False, is_test=True, apply_norm=data_config['use_norm'], center_num = center_num)
+        dataset_dict['name'] = str(center_num)
 
         dataset_sizes['train'] = len(dataset_dict['train'])
         dataset_sizes['val'] = len(dataset_dict['val'])
@@ -179,7 +180,8 @@ if __name__ == '__main__':
     # plt.imshow(dataset_dict['train'][0][1], cmap='gray')
     # plt.show()
         
-    dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3, 4, 5, 6]]
+    # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3, 4, 5, 6]]
+    dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3]]
     for i in range(len(dataset_dicts)):
         l = len(dataset_dicts[i]['train'])
         print(f'data center {i+1} has {l} training points')

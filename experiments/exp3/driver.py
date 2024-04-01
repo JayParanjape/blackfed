@@ -1,8 +1,8 @@
 import sys
 sys.path.append("../..")
 
-from train_combined_white import train as combined_white_train
-from train_combined_white import test
+from train_combined import train as combined_train
+from train_combined import test
 import torch
 from model import UNet_Server, UNet_Client
 from data_utils import get_data
@@ -20,6 +20,7 @@ server = UNet_Server(1)
 
 with open('../../data_configs/polypgen.yml', 'r') as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
+    # config['data_transforms']['img_size'] = 512
 
 for i in range(len(datasets_list)):
     datasets.append(get_data(config, datasets_list[i]))
@@ -33,7 +34,7 @@ for i in range(num_meta_epochs):
         for j in range(len(datasets_list)):        
             clients[j].load_state_dict(torch.load('./tmp_client_'+str(j)+'.pth'))
 
-    combined_white_train(server, clients, datasets, save_path='./saved_models/', loss_string='bce + dice', device=device)
+    combined_train(server, clients, datasets, save_path='./saved_models/', loss_string='bce + dice', device=device)
     torch.cuda.empty_cache()
         
 
@@ -41,4 +42,5 @@ for i in range(num_meta_epochs):
 for j in range(len(datasets_list)):
     server.load_state_dict(torch.load('./tmp_server.pth'))
     clients[j].load_state_dict(torch.load('.'+'/tmp_client_'+str(j)+'.pth'))    
-    test(server, clients[j], datasets[j], device='cuda:0')
+    test(server, clients[j], datasets[j], device=device)
+    torch.cuda.empty_cache()
