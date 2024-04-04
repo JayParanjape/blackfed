@@ -26,16 +26,16 @@ for i in range(len(datasets_list)):
     datasets.append(get_data(config, datasets_list[i]))
 
     
-num_meta_epochs = 10
-for i in range(num_meta_epochs):
-    if i>0:
-        server.load_state_dict(torch.load('./tmp_server.pth'))
+# num_meta_epochs = 10
+# for i in range(num_meta_epochs):
+#     if i>0:
+#         server.load_state_dict(torch.load('./tmp_server.pth'))
 
-        for j in range(len(datasets_list)):        
-            clients[j].load_state_dict(torch.load('./tmp_client_'+str(j)+'.pth'))
+#         for j in range(len(datasets_list)):        
+#             clients[j].load_state_dict(torch.load('./tmp_client_'+str(j)+'.pth'))
 
-    combined_train(server, clients, datasets, save_path='./saved_models/', loss_string='bce + dice', device=device)
-    torch.cuda.empty_cache()
+#     combined_train(server, clients, datasets, save_path='./saved_models/', loss_string='bce + dice', device=device)
+#     torch.cuda.empty_cache()
         
 
 #testing

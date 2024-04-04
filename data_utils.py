@@ -1,6 +1,7 @@
 from datasets.glas import GLAS_Dataset
 from datasets.kvasirseg import KVASIRSEG_Dataset
 from datasets.polypgen import PolypGen_Dataset
+from datasets.cityscapes import CITYSCAPES_Dataset
 from datasets.isic import Skin_Dataset
 from datasets.refuge import Refuge_Dataset
 from datasets.rite import RITE_Dataset
@@ -130,6 +131,16 @@ def get_data(data_config, center_num=1):
 
         print(dataset_sizes)
 
+    elif data_config['name'] == 'CITYSCAPES':
+        dataset_dict['train'] = CITYSCAPES_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], center_num=center_num)
+        dataset_dict['val'] = CITYSCAPES_Dataset(data_config, shuffle_list=False, apply_norm=data_config['use_norm'], is_train=False, center_num=center_num)
+        dataset_dict['test'] = CITYSCAPES_Dataset(data_config, shuffle_list=False, is_train=False, is_test=True, apply_norm=data_config['use_norm'], center_num=center_num)
+        dataset_dict['name'] = str(center_num)
+
+        dataset_sizes['train'] = len(dataset_dict['train'])
+        dataset_sizes['val'] = len(dataset_dict['val'])
+        dataset_sizes['test'] = len(dataset_dict['test'])
+
     return dataset_dict
 
 def visualize_PCA(dataset_dicts, phase='train'):
@@ -171,6 +182,7 @@ def visualize_PCA(dataset_dicts, phase='train'):
 if __name__ == '__main__':
     with open(sys.argv[1], 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
+    #1
     # dataset_dict = get_data(config, center_num=1)
     # print(dataset_dict['train'][0][0].shape)
     # print(dataset_dict['train'][0][1].shape)
@@ -179,12 +191,26 @@ if __name__ == '__main__':
     # plt.show()
     # plt.imshow(dataset_dict['train'][0][1], cmap='gray')
     # plt.show()
-        
-    # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3, 4, 5, 6]]
-    dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3]]
-    for i in range(len(dataset_dicts)):
-        l = len(dataset_dicts[i]['train'])
-        print(f'data center {i+1} has {l} training points')
 
+    #2  
+    # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3, 4, 5, 6]]
+    # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3]]
+    # for i in range(len(dataset_dicts)):
+    #     l = len(dataset_dicts[i]['train'])
+    #     print(f'data center {i+1} has {l} training points')
+
+    #3
     # visualize_PCA(dataset_dicts)
+
+    #4
+    #visualize images
+    dd = get_data(config, center_num=2)
+    ridx = 4
+    plt.imshow(dd['train'][ridx][0].permute(1,2,0))
+    plt.savefig('tmp3.png')
+    label = dd['train'][ridx][1]
+    print(label.shape)
+    plt.imshow(label.permute(1,2,0)[:,:,8], cmap='gray')
+    plt.savefig('tmp4.png')
+    
 
