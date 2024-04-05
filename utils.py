@@ -43,6 +43,8 @@ def compute_hd95(preds, gt):
 
 
 def dice_loss(y_pred, y_true):
+    # print('ytrue shape: ', y_true.shape)
+    # print('ypred shape: ', y_pred.shape)
     numerator = (2 * torch.sum(y_true * y_pred))
     denominator = torch.sum(y_true + y_pred)
 

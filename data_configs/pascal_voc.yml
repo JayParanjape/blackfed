@@ -1,0 +1,22 @@
+name: PASCAL_VOC
+root_path: '/mnt/store/jparanj1/PASCAL_VOC'
+label_list: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18, 19]
+label_names: ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'dining table', 'dog', 'horse', 'motor bike', 'person', 'potted plant', 'sheep', 'sofa', 'train', 'monitor']
+palette: [[128,0,0], [0, 128, 0], [128,128,0], [0,0,128], [128,0,128], [0,128,128], [128,128,128], [64,0,0], [192,0,0], [64,128,0], [192,128,0], [64,0,128], [192,0,128], [64,128,128], [192,128,128], [0,64,0], [128,64,0], [0,192,0], [128,192,0],[0,64,128]]
+volume_channel: 2
+use_norm: True
+no_text_mode: True
+data_transforms:
+  a_min: 0
+  a_max: 255
+  img_size: [256, 256]
+  use_random_crop: False
+  use_rotation: False
+  rotation_angle: 10
+  use_saturation: False
+  saturation: 2
+  use_brightness: True
+  brightness: 2
+  use_horizontal_flip: False
+  use_cjitter: False
+  use_affine: False

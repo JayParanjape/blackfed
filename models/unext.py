@@ -10,7 +10,7 @@ class UNext_Client(nn.Module):
         super(UNext_Client, self).__init__()
         self.n_channels = n_channels
 
-        self.inc = DoubleConv(n_channels, 64)
+        self.inc = DoubleConv(3, n_channels)
 
     def forward(self, x):
         out = self.inc(x)
@@ -147,7 +147,7 @@ class UNext_Server(nn.Module):
         out = torch.add(out,t1)
         out = F.relu(F.interpolate(self.decoder5(out),scale_factor=(2,2),mode ='bilinear'))
 
-        return self.soft(self.final(out)),0
+        return self.soft(self.final(out))
 
 class shiftmlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0., shift_size=5):

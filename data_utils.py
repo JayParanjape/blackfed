@@ -2,6 +2,7 @@ from datasets.glas import GLAS_Dataset
 from datasets.kvasirseg import KVASIRSEG_Dataset
 from datasets.polypgen import PolypGen_Dataset
 from datasets.cityscapes import CITYSCAPES_Dataset
+from datasets.pascal_voc import PASCAL_VOC_Dataset
 from datasets.isic import Skin_Dataset
 from datasets.refuge import Refuge_Dataset
 from datasets.rite import RITE_Dataset
@@ -135,11 +136,25 @@ def get_data(data_config, center_num=1):
         dataset_dict['train'] = CITYSCAPES_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], center_num=center_num)
         dataset_dict['val'] = CITYSCAPES_Dataset(data_config, shuffle_list=False, apply_norm=data_config['use_norm'], is_train=False, center_num=center_num)
         dataset_dict['test'] = CITYSCAPES_Dataset(data_config, shuffle_list=False, is_train=False, is_test=True, apply_norm=data_config['use_norm'], center_num=center_num)
+        dataset_dict['pure_test'] = CITYSCAPES_Dataset(data_config, shuffle_list=False, is_train=False, is_test=True, apply_norm=data_config['use_norm'], center_num=center_num, pure_test=True)
         dataset_dict['name'] = str(center_num)
 
         dataset_sizes['train'] = len(dataset_dict['train'])
         dataset_sizes['val'] = len(dataset_dict['val'])
         dataset_sizes['test'] = len(dataset_dict['test'])
+        dataset_sizes['pure_test'] = len(dataset_dict['pure_test'])
+
+    elif data_config['name'] == 'PASCAL_VOC':
+        dataset_dict['train'] = PASCAL_VOC_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], center_num=center_num)
+        dataset_dict['val'] = PASCAL_VOC_Dataset(data_config, shuffle_list=False, apply_norm=data_config['use_norm'], is_train=False, center_num=center_num)
+        dataset_dict['test'] = PASCAL_VOC_Dataset(data_config, shuffle_list=False, is_train=False, is_test=True, apply_norm=data_config['use_norm'], center_num=center_num)
+        dataset_dict['pure_test'] = PASCAL_VOC_Dataset(data_config, shuffle_list=False, is_train=False, is_test=True, apply_norm=data_config['use_norm'], center_num=center_num, pure_test=True)
+        dataset_dict['name'] = str(center_num)
+
+        dataset_sizes['train'] = len(dataset_dict['train'])
+        dataset_sizes['val'] = len(dataset_dict['val'])
+        dataset_sizes['test'] = len(dataset_dict['test'])
+        dataset_sizes['pure_test'] = len(dataset_dict['pure_test'])
 
     return dataset_dict
 
@@ -205,12 +220,13 @@ if __name__ == '__main__':
     #4
     #visualize images
     dd = get_data(config, center_num=2)
+    print(len(dd['val']))
     ridx = 4
-    plt.imshow(dd['train'][ridx][0].permute(1,2,0))
+    plt.imshow(dd['val'][ridx][0].permute(1,2,0))
     plt.savefig('tmp3.png')
-    label = dd['train'][ridx][1]
+    label = dd['val'][ridx][1]
     print(label.shape)
-    plt.imshow(label.permute(1,2,0)[:,:,8], cmap='gray')
+    plt.imshow(label.permute(1,2,0)[:,:,13], cmap='gray')
     plt.savefig('tmp4.png')
     
 

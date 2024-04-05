@@ -41,7 +41,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
     #set hyperparameters
     num_epochs_server = 11
     num_epochs_client = 21
-    bs = 32
+    bs = 9
     lr_server = 1e-3
     lr_client = 0.01
     sp_avg = 5
@@ -102,12 +102,24 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
             # forward
             # track history if only in train
             with torch.set_grad_enabled(False):
-                x1 = client(inputs)
+                try:
+                    x1 = client(inputs)
+                except ValueError() as ve:
+                    #if batchnorm messes up things
+                    print("Avoiding batchnorm error")
+                    x1 = client(inputs[:-1])
+
             with torch.set_grad_enabled(True):
-                outputs = server(x1)
-                loss=loss_fxn.forward(outputs, labels)
-                # print("Reg loss: ",reg_loss)
-                
+                try:
+                    outputs = server(x1)
+                    loss=loss_fxn.forward(outputs, labels)
+                    # print("Reg loss: ",reg_loss)
+                except ValueError() as ve:
+                    outputs = server(x1[:-1])
+                    loss=loss_fxn.forward(outputs, labels[:-1])
+                    labels = labels[:-1]
+                    inputs = inputs[:-1]
+
                 # backward + optimize only if in training phase
                 loss.backward(retain_graph=False)
                 server_optimizer.step()
@@ -165,9 +177,9 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                     running_loss += loss.item() * inputs.size(0)
                     ri, ru = running_stats(labels,preds)
                     running_dice += dice_collated(ri,ru)
-                    hd = compute_hd95(preds, labels)
-                    if not math.isnan(hd):
-                        hds.append(hd)
+                    # hd = compute_hd95(preds, labels)
+                    # if not math.isnan(hd):
+                    #     hds.append(hd)
     
             #validation performance
             # print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
@@ -176,7 +188,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
             epoch_loss = running_loss / ((count))
             epoch_dice = running_dice / ((len(dataset_dict['val'])))
             # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-            print(f'Training server at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}') 
+            print(f'Training server at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation Dice: {epoch_dice:.4f}') 
                
             #save server
             if epoch_loss < best_val_loss:
@@ -270,7 +282,15 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                     # forward
                     # track history if only in train
                     with torch.no_grad():
-                        x1 = client(inputs)
+                        try:
+                            x1 = client(inputs)
+                        except ValueError() as ve:
+                            #if batchnorm messes up things
+                            print("Avoiding batchnorm error")
+                            x1 = client(inputs[:-1])
+                            labels = labels[:-1]
+                            inputs = inputs[:-1]
+
                         outputs= server(x1)
                         loss=loss_fxn.forward(outputs, labels)
                         # print("Reg loss: ",reg_loss)
@@ -282,9 +302,9 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                         running_loss += loss.item() * inputs.size(0)
                         ri, ru = running_stats(labels,preds)
                         running_dice += dice_collated(ri,ru)
-                        hd = compute_hd95(preds, labels)
-                        if not math.isnan(hd):
-                            hds.append(hd)
+                        # hd = compute_hd95(preds, labels)
+                        # if not math.isnan(hd):
+                        #     hds.append(hd)
         
                 #validation performance
                 # print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
@@ -293,7 +313,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                 epoch_loss = running_loss / ((count))
                 epoch_dice = running_dice / ((len(dataset_dict['val'])))
                 # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-                print(f'Training client at epoch {epoch} Training Loss: {epoch_loss:.4f} Training Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}')
+                print(f'Training client at epoch {epoch} Training Loss: {epoch_loss:.4f} Training Dice: {epoch_dice:.4f}')
 
                 #save client
                 if epoch_loss < best_val_loss:
@@ -306,8 +326,8 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
     return server, client
 
 def test(server, client, dataset_dict, device):
-    server = server.to(device)
-    client = client.to(device)
+    server = server.to(device).eval()
+    client = client.to(device).eval()
     #set up logger
     # logging.basicConfig(filename=os.path.join('saved_models',"testing_progress.log"),
     #                 format='%(message)s',
@@ -333,9 +353,9 @@ def test(server, client, dataset_dict, device):
             # statistics
             ri, ru = running_stats(label,preds)
             running_dice += dice_collated(ri,ru)
-            hd = compute_hd95(preds, label)
-            if not math.isnan(hd):
-                hds.append(hd)
+            # hd = compute_hd95(preds, label)
+            # if not math.isnan(hd):
+            #     hds.append(hd)
 
     #validation performance
     # print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
@@ -343,5 +363,5 @@ def test(server, client, dataset_dict, device):
     # print(running_loss/intermediate_count)
     epoch_dice = running_dice / len(dataset_dict['test'])
     # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-    print(f'Testing {dataset_dict["name"]}: Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}')
+    print(f'Testing {dataset_dict["name"]}: Dice: {epoch_dice:.4f}')
 

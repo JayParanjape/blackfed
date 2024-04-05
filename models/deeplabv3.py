@@ -23,9 +23,12 @@ class DeepLabv3_Server(nn.Module):
         self.network.backbone.conv1 = nn.Identity()
         self.network.backbone.bn1 = nn.Identity()
         self.network.backbone.relu = nn.Identity()
+        self.soft = nn.Softmax(dim =1)
+
 
     def forward(self, x):
         out = self.network(x)['out']
+        out = self.soft(out)
 
         return out
 
@@ -59,3 +62,4 @@ if __name__ == '__main__':
 
     print(client_out.shape)
     print(server_out.shape)
+    print(server)
