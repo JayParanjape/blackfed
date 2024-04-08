@@ -41,7 +41,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
     #set hyperparameters
     num_epochs_server = 11
     num_epochs_client = 21
-    bs = 9
+    bs = 8
     lr_server = 1e-3
     lr_client = 0.01
     sp_avg = 5

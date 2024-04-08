@@ -1,4 +1,5 @@
 *.pth
 *.log
+*.txt
 save_models
 __pycache__

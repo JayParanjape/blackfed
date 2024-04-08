@@ -1,5 +1,6 @@
 import os
 import sys
+sys.path.append('../..')
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,7 +9,7 @@ import logging
 from utils import *
 import torch.optim as optim
 import math
-from model import UNet
+from models.deeplabv3 import DeepLabv3
 from data_utils import get_data
 import yaml
 
@@ -101,7 +102,7 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
             with torch.set_grad_enabled(True):
                 try:
                     outputs = model(inputs)
-                except ValueError() as ve:
+                except ValueError as ve:
                     outputs = model(inputs[:-1])
                     inputs = inputs[:-1]
                     labels = labels[:-1]
@@ -157,15 +158,14 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
                     running_loss += loss.item() * inputs.size(0)
                     ri, ru = running_stats(labels,preds)
                     running_dice += dice_collated(ri,ru)
-                    hd = compute_hd95(preds, labels)
-                    if not math.isnan(hd):
-                        hds.append(hd)
+                    # hd = compute_hd95(preds, labels)
+                    # if not math.isnan(hd):
+                    #     hds.append(hd)
     
             #validation performance
             epoch_loss = running_loss / ((count))
             epoch_dice = running_dice / ((len(dataset_dict['val'])))
-            print(f'Validating model at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}') 
-            logger.info('Validating model at epoch %d Validation Loss: %f Validation Dice: %f HD95 avg: %f', epoch, epoch_loss, epoch_dice, torch.mean(torch.Tensor(hds))) 
+            print(f'Validating model at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation Dice: {epoch_dice:.4f}') 
             
             #save model
             if epoch_loss < best_val_loss:
@@ -200,8 +200,6 @@ def test(model, dataset_dict, load_path, loss_string, device, center_num='0'):
 
     for inputs, labels,text_idxs, text in dataloader:
     # for inputs, labels,text_idxs, text, pt, pt_label in dataloaders[phase]:
-        if len(labels.shape)==3:
-            labels = labels.unsqueeze(1)
         count+=1
         intermediate_count += inputs.shape[0]
 
@@ -212,6 +210,7 @@ def test(model, dataset_dict, load_path, loss_string, device, center_num='0'):
         # track history if only in train
         with torch.no_grad():
             outputs = model(inputs)
+            # print("Outputs.shape: ", outputs.shape)
             loss=loss_fxn.forward(outputs, labels)
             # print("Reg loss: ",reg_loss)
             
@@ -222,14 +221,14 @@ def test(model, dataset_dict, load_path, loss_string, device, center_num='0'):
             running_loss += loss.item() * inputs.size(0)
             ri, ru = running_stats(labels,preds)
             running_dice += dice_collated(ri,ru)
-            hd = compute_hd95(preds, labels)
-            if not math.isnan(hd):
-                hds.append(hd)
+            # hd = compute_hd95(preds, labels)
+            # if not math.isnan(hd):
+            #     hds.append(hd)
 
     epoch_loss = running_loss / ((count))
     epoch_dice = running_dice / ((len(dataset_dict['test'])))
     # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-    print(f'Testing model on center {str(center_num)} Test Loss: {epoch_loss:.4f} Test Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}') 
+    print(f'Testing model on center {str(center_num)} Test Loss: {epoch_loss:.4f} Test Dice: {epoch_dice:.4f} ') 
 
     return model
 
@@ -247,7 +246,7 @@ if __name__ == '__main__':
         num_epochs=2000
     load_path =sys.argv[7]
     
-    model = UNet(n_channels=3, n_classes=1)
+    model = DeepLabv3(n_channels=64, n_classes=20)
     if fed_learning:
         model.load_state_dict(torch.load('./fed_learning_model.pth'))
 

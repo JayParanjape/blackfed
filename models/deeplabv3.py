@@ -2,6 +2,18 @@ import torch
 import torch.nn as nn
 import torchvision
 
+class DeepLabv3(nn.Module):
+    def __init__(self, n_channels, n_classes):
+        super(DeepLabv3, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.DeepLabv3_Client = DeepLabv3_Client(n_channels)
+        self.DeepLabv3_Server = DeepLabv3_Server(n_channels, n_classes)
+
+    def forward(self, x):
+        out = self.DeepLabv3_Server(self.DeepLabv3_Client(x))
+        return out
+
 class DeepLabv3_Client(nn.Module):
     def __init__(self, n_channels):
         super(DeepLabv3_Client, self).__init__()

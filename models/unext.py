@@ -5,6 +5,18 @@ import torch.nn.functional as F
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 import math
 
+class UNext(nn.Module):
+    def __init__(self, n_channels, n_classes):
+        super(UNext, self).__init__()
+        self.n_channels = n_channels
+        self.UNext_Client = UNext_Client(n_channels)
+        self.UNext_Server = UNext_Server(n_classes, n_channels)
+
+    def forward(self, x):
+        out = self.UNext_Server(self.UNext_Client(x))
+        return out
+
+
 class UNext_Client(nn.Module):
     def __init__(self, n_channels):
         super(UNext_Client, self).__init__()
