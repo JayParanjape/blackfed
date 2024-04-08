@@ -39,8 +39,8 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
     logger.setLevel(logging.INFO)
 
     #set hyperparameters
-    num_epochs_server = 11
-    num_epochs_client = 21
+    num_epochs_server = 31
+    num_epochs_client = 101
     bs = 8
     lr_server = 1e-3
     lr_client = 0.01
@@ -104,7 +104,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
             with torch.set_grad_enabled(False):
                 try:
                     x1 = client(inputs)
-                except ValueError() as ve:
+                except ValueError as ve:
                     #if batchnorm messes up things
                     print("Avoiding batchnorm error")
                     x1 = client(inputs[:-1])
@@ -114,7 +114,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                     outputs = server(x1)
                     loss=loss_fxn.forward(outputs, labels)
                     # print("Reg loss: ",reg_loss)
-                except ValueError() as ve:
+                except ValueError as ve:
                     outputs = server(x1[:-1])
                     loss=loss_fxn.forward(outputs, labels[:-1])
                     labels = labels[:-1]
@@ -284,7 +284,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                     with torch.no_grad():
                         try:
                             x1 = client(inputs)
-                        except ValueError() as ve:
+                        except ValueError as ve:
                             #if batchnorm messes up things
                             print("Avoiding batchnorm error")
                             x1 = client(inputs[:-1])

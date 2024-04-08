@@ -40,7 +40,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
 
     #set hyperparameters
     num_epochs = 21
-    bs = 32
+    bs = 8
     lr_server = 1e-3
     lr_client = 0.001
     sp_avg = 5
@@ -102,10 +102,18 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
 
             # forward
             # track history if only in train
-            with torch.set_grad_enabled(False):
-                x1 = client(inputs)
             with torch.set_grad_enabled(True):
-                outputs = server(x1)
+                try:
+                    x1 = client(inputs)
+                    outputs = server(x1)
+                except ValueError as ve:
+                    #if batchnorm messes up things
+                    print("Avoiding batchnorm error")
+                    inputs = inputs[:-1]
+                    labels = labels[:-1]
+                    x1 = client(inputs)
+                    outputs = server(x1)
+
                 loss=loss_fxn.forward(outputs, labels)
                 # print("Reg loss: ",reg_loss)
                 
@@ -192,8 +200,8 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
     return server, client
 
 def test(server, client, dataset_dict, device):
-    server = server.to(device)
-    client = client.to(device)
+    server = server.to(device).eval()
+    client = client.to(device).eval()
     #set up logger
     # logging.basicConfig(filename=os.path.join('saved_models',"testing_progress.log"),
     #                 format='%(message)s',
