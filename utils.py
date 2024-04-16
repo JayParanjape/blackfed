@@ -5,6 +5,18 @@ import argparse
 import torch.nn as nn
 import monai
 
+def no_blank_miou(y_true, y_pred):
+    #y_true and y_pred are BXCXHXW
+    y_true = y_true.cpu()
+    y_pred = y_pred.cpu()
+    collapsed_true = (1+torch.argmax(y_true, axis=1))*(torch.any(y_true, axis=1))
+    tmp = 0.5*torch.ones((y_pred.shape[0],1,y_pred.shape[2],y_pred.shape[3]))
+    collapsed_pred = torch.argmax(torch.cat([tmp, y_pred],dim=1), dim=1)
+
+    intersection = torch.sum(((collapsed_pred == collapsed_true)&(collapsed_true>0)), axis=(-1,-2))
+    union = torch.sum((collapsed_pred>0),axis=(-1,-2)) + torch.sum((collapsed_true>0),axis=(-1,-2)) - intersection
+    return torch.sum(intersection/union)
+
 def dice_coef(y_true, y_pred, smooth=1):
     # print(y_pred.shape, y_true.shape)
     intersection = torch.sum(y_true * y_pred,axis=(-1,-2))

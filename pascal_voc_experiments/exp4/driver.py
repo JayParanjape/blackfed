@@ -29,11 +29,12 @@ class Loss_fxn():
                 loss += (tmp_wt[i]*l(pred, label))
             except:
                 loss += (tmp_wt[i]*l(pred, label.float()))
+            # print(i, loss)
         return loss
 
 
 #training baselines includes the model without any split learning
-def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000, center_num=0):
+def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000, center_num=0, bs=8):
     model = model.to(device)
     os.makedirs(save_path, exist_ok=True)    
     #set up logger
@@ -51,14 +52,15 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
         losses_list.append(dice_loss)
     if 'bce' in loss_string:
         losses_list.append(nn.BCELoss())
+    if 'CE' in loss_string:
+        losses_list.append(nn.CrossEntropyLoss())
     loss_fxn = Loss_fxn(losses_list)
     # print("debug: loss loaded, device: ", device)
 
     #control parameter for doing only testing
 
     #set hyperparameters
-    bs = 8
-    lr = 1e-3
+    lr = 1e-4
 
     tr_dataset, val_dataset, test_dataset = dataset_dict['train'], dataset_dict['val'], dataset_dict['test']
     best_val_loss = 10000
@@ -74,6 +76,7 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
         running_union = 0
         running_corrects = 0
         running_dice = 0
+        running_iou = 0
         intermediate_count = 0
         count = 0
         preds_all = []
@@ -102,7 +105,7 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
             with torch.set_grad_enabled(True):
                 try:
                     outputs = model(inputs)
-                except ValueError() as ve:
+                except ValueError as ve:
                     outputs = model(inputs[:-1])
                     inputs = inputs[:-1]
                     labels = labels[:-1]
@@ -110,28 +113,30 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
                 # print("Reg loss: ",reg_loss)
                 
                 # backward + optimize only if in training phase
-                loss.backward(retain_graph=False)
+                loss.backward()
                 optimizer.step()
 
             with torch.no_grad():
-                preds = (outputs>=0.5)
-
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
-                ri, ru = running_stats(labels,preds)
-                running_dice += dice_collated(ri,ru)
+                # ri, ru = running_stats(labels,preds)
+                # running_dice += dice_collated(ri,ru)
+                preds = (outputs>=0.5)
+
+                running_iou += no_blank_miou(labels, preds)
 
         #check training performance
         if epoch%5==0:
-            epoch_loss = running_loss / ((count))
-            epoch_dice = running_dice / ((len(tr_dataset)))
-            print(f'Training at epoch {epoch} Train Loss: {epoch_loss:.4f} Train Dice: {epoch_dice:.4f}') 
-            logger.info('Training at epoch %d Train Loss: %f Train Dice: %f', epoch, epoch_loss, epoch_dice)
+            epoch_loss = running_loss / ((len(tr_dataset)))
+            # epoch_dice = running_dice / ((len(tr_dataset)))
+            epoch_iou = running_iou / ((len(tr_dataset)))
+            print(f'Training at epoch {epoch} Train Loss: {epoch_loss:.4f} Train mIoU: {epoch_iou:.4f}') 
 
         #check validation performance
         if epoch%5==0:
             running_loss = 0.0
             running_dice = 0
+            running_iou = 0
             intermediate_count = 0
             count = 0
             hds = []
@@ -149,25 +154,26 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
                 with torch.no_grad():
                     outputs = model(inputs)
                     loss=loss_fxn.forward(outputs, labels)
+                    preds=(outputs>=0.5)
                     # print("Reg loss: ",reg_loss)
-                    
-                    preds = (outputs>=0.5)
-
 
                     # statistics
                     running_loss += loss.item() * inputs.size(0)
-                    ri, ru = running_stats(labels,preds)
-                    running_dice += dice_collated(ri,ru)
+                    # ri, ru = running_stats(labels,preds)
+                    # running_dice += dice_collated(ri,ru)
+                    running_iou += no_blank_miou(labels, preds)
                     # hd = compute_hd95(preds, labels)
                     # if not math.isnan(hd):
                     #     hds.append(hd)
     
             #validation performance
-            epoch_loss = running_loss / ((count))
-            epoch_dice = running_dice / ((len(dataset_dict['val'])))
-            print(f'Validating model at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation Dice: {epoch_dice:.4f}') 
+            epoch_loss = running_loss / ((len(dataset_dict['val'])))
+            # epoch_dice = running_dice / ((len(dataset_dict['val'])))
+            epoch_iou = running_iou / ((len(dataset_dict['val'])))
+            print(f'Validating model at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation mIoU: {epoch_iou:.4f}') 
             
             #save model
+            torch.save(model.state_dict(), os.path.join(save_path, 'client_'+str(int(center_num)-1)+'_current.pth'))
             if epoch_loss < best_val_loss:
                 best_val_loss = epoch_loss
                 torch.save(model.state_dict(), os.path.join(save_path,'client_'+str(int(center_num)-1)+'_best_val.pth'))
@@ -187,11 +193,14 @@ def test(model, dataset_dict, load_path, loss_string, device, center_num='0'):
         losses_list.append(dice_loss)
     if 'bce' in loss_string:
         losses_list.append(nn.BCELoss())
+    if 'CE' in loss_string:
+        losses_list.append(nn.CrossEntropyLoss())
     loss_fxn = Loss_fxn(losses_list)
     # print("debug: loss loaded")
 
     running_loss = 0.0
     running_dice = 0
+    running_iou = 0
     intermediate_count = 0
     count = 0
     hds = []
@@ -219,16 +228,19 @@ def test(model, dataset_dict, load_path, loss_string, device, center_num='0'):
 
             # statistics
             running_loss += loss.item() * inputs.size(0)
-            ri, ru = running_stats(labels,preds)
-            running_dice += dice_collated(ri,ru)
+            # ri, ru = running_stats(labels,preds)
+            # running_dice += dice_collated(ri,ru)
+            running_iou += no_blank_miou(labels, preds)
             # hd = compute_hd95(preds, labels)
             # if not math.isnan(hd):
             #     hds.append(hd)
 
-    epoch_loss = running_loss / ((count))
-    epoch_dice = running_dice / ((len(dataset_dict['test'])))
+    epoch_loss = running_loss / ((len(dataset_dict['test'])))
+    # epoch_dice = running_dice / ((len(dataset_dict['test'])))
+    epoch_iou = running_iou / ((len(dataset_dict['test'])))
+
     # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-    print(f'Testing model on center {str(center_num)} Test Loss: {epoch_loss:.4f} Test Dice: {epoch_dice:.4f} ') 
+    print(f'Testing model on center {str(center_num)} Test Loss: {epoch_loss:.4f} Test mIoU: {epoch_iou:.4f} ') 
 
     return model
 
@@ -263,13 +275,13 @@ if __name__ == '__main__':
     if not only_test:
         # model = train(model, dataset_dict, save_path = './baselines/polyp/polyp_baseline_'+str(center_num)+'/', loss_string='bce + dice', device=device, num_epochs=num_epochs)
         # model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
-        model = train(model, dataset_dict, save_path = './saved_models' , loss_string='bce + dice', device=device, num_epochs=num_epochs, center_num=center_num)
-        model = test(model, dataset_dict, load_path = './saved_models/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='bce + dice', device=device)
+        model = train(model, dataset_dict, save_path = './saved_models3_dice' , loss_string='dice', device=device, num_epochs=num_epochs, center_num=center_num, bs=32)
+        model = test(model, dataset_dict, load_path = './saved_models3_dice/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='dice', device=device)
     else:
         #only test - give load path for model instead of save path
         # model = test(model, dataset_dict, load_path = './skin_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
         # model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(2)+'/model_best_val.pth', loss_string='bce + dice', device=device)
         # model = test(model, dataset_dict, load_path = './saved_models/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='bce + dice', device=device)
-        model = test(model, dataset_dict, load_path = load_path, loss_string='bce + dice', device=device, center_num=center_num)
+        model = test(model, dataset_dict, load_path = load_path, loss_string='dice', device=device, center_num=center_num)
 
 

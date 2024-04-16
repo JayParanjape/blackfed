@@ -26,8 +26,6 @@ class PASCAL_VOC_Dataset(Dataset):
         self.apply_norm = apply_norm
 
         if center_num=='super':
-            print("Not yet implemented...")
-            1/0
             self.populate_lists_super()
         else:
             self.populate_lists()
@@ -81,31 +79,38 @@ class PASCAL_VOC_Dataset(Dataset):
             self.label_list.append('')
     
     def populate_lists_super(self):
+        if self.pure_test:
+            imgs_paths = [os.path.join(self.root_path, 'tPw4xHjP', 'VOCdevkit', 'VOC2012','ImageSets', 'Segmentation', 'test.txt')]
+            imgs_root = os.path.join(self.root_path, 'tPw4xHjP', 'VOCdevkit', 'VOC2012','JPEGImages', 'train.txt')
+            masks_root = ''
+        
         if self.is_train:
-            imgs_path = os.path.join(self.root_path, 'super_train.txt')
+            imgs_paths = [os.path.join(self.root_path, 'centers_FL/center_'+str(center_num), 'train.txt') for center_num in range(1,11)]
+            imgs_root = os.path.join(self.root_path,'VOCtrainval_11-May-2012','VOCdevkit','VOC2012','JPEGImages')
+            masks_root = os.path.join(self.root_path,'VOCtrainval_11-May-2012','VOCdevkit','VOC2012','SegmentationClass')
+
         else:
             if self.is_test:
-                imgs_path = os.path.join(self.root_path, 'super_test.txt')
+                imgs_paths = [os.path.join(self.root_path, 'centers_FL/center_'+str(center_num), 'test.txt') for center_num in range(1,11)]
+                imgs_root = os.path.join(self.root_path,'VOCtrainval_11-May-2012','VOCdevkit','VOC2012','JPEGImages')
+                masks_root = os.path.join(self.root_path,'VOCtrainval_11-May-2012','VOCdevkit','VOC2012','SegmentationClass')
             else:
-                imgs_path = os.path.join(self.root_path, 'super_val.txt')
+                imgs_paths = [os.path.join(self.root_path, 'centers_FL/center_'+str(center_num), 'val.txt') for center_num in range(1,11)]
+                imgs_root = os.path.join(self.root_path,'VOCtrainval_11-May-2012','VOCdevkit','VOC2012','JPEGImages')
+                masks_root = os.path.join(self.root_path,'VOCtrainval_11-May-2012','VOCdevkit','VOC2012','SegmentationClass')
 
-        im_list_file= open(imgs_path, 'r')
-        im_list = im_list_file.readlines()
+        for imgs_path in imgs_paths:
+            im_list_file= open(imgs_path, 'r')
+            im_list = im_list_file.readlines()
 
-        for img in im_list:
-            img = img.strip()
-            sl_idx = img.find('/')
-            img_name = img[sl_idx+1:]
-            data_num = img[:sl_idx]
-            center_num = data_num[5:]
+            for img in im_list:
+                img = img.strip()
 
-            if (('jpg' not in img) and ('jpeg not in img') and ('png' not in img) and ('bmp' not in img)):
-                continue
-            
-            self.img_names.append(img_name)
-            self.img_path_list.append(os.path.join(self.root_path,data_num,'images_'+center_num,img_name))
-            self.label_path_list.append(os.path.join(self.root_path,data_num,'masks_'+center_num,img_name[:-4]+'_mask.jpg'))
-            self.label_list.append('Polyp')
+                self.img_names.append(img+'.jpg')
+                self.img_path_list.append(os.path.join(imgs_root,img+'.jpg'))
+                self.label_path_list.append(os.path.join(masks_root, img+'.png'))
+                self.label_list.append('')
+
 
 
     def __getitem__(self, index):
@@ -123,13 +128,14 @@ class PASCAL_VOC_Dataset(Dataset):
             palette = self.config['palette']
             num_labels = len(palette)
             label_ohe = torch.zeros(num_labels, label.shape[0], label.shape[1])
+            label_of_interest = ''
 
             for i in range(num_labels):
                 label_ohe[i] = torch.all(torch.eq(label, torch.Tensor(palette[i])),dim=2)
-            
+                if torch.any(label_ohe[i]):
+                    label_of_interest += self.label_names[i]+' '
             # label_ohe = label_ohe.unsqueeze(0)
             label_ohe = (label_ohe)+0
-            label_of_interest = ''
         else:
             label_ohe = torch.zeros((20,img.shape[1], img.shape[2]))
 

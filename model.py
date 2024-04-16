@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
+    def __init__(self, n_channels, n_classes, bilinear=False, use_sigmoid=False):
         super(UNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
@@ -22,6 +22,7 @@ class UNet(nn.Module):
         self.up4 = (Up(128, 64, bilinear))
         self.outc = (OutConv(64, n_classes))
         self.dropout = nn.Dropout(0.5)
+        self.use_sigmoid = use_sigmoid
 
     def forward(self, x0):
         x1 = self.inc(x0)
@@ -40,8 +41,11 @@ class UNet(nn.Module):
         x = self.dropout(x)
         x = self.up4(x, x1)
         logits = self.outc(x)
-        sigmoid_logits = F.sigmoid(logits)
-        return sigmoid_logits
+        if self.use_sigmoid:
+            logits = F.sigmoid(logits, dim=1)
+        else:
+            logits = F.softmax(logits, dim=1)
+        return logits
 
 
 class UNet_Client(nn.Module):

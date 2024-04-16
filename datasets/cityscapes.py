@@ -26,8 +26,6 @@ class CITYSCAPES_Dataset(Dataset):
         self.apply_norm = apply_norm
 
         if center_num=='super':
-            print("Not yet implemented...")
-            1/0
             self.populate_lists_super()
         else:
             self.populate_lists()
@@ -80,31 +78,39 @@ class CITYSCAPES_Dataset(Dataset):
             self.label_list.append('')
     
     def populate_lists_super(self):
-        if self.is_train:
-            imgs_path = os.path.join(self.root_path, 'super_train.txt')
+        if self.pure_test:
+            imgs_paths = [os.path.join(self.root_path, 'all_test.txt')]
+            imgs_root = os.path.join(self.root_path,'leftImg8bit_trainvaltest','leftImg8bit','test')
+            masks_root = os.path.join(self.root_path,'gtFine_trainvaltest','gtFine','test')
+        elif self.is_train:
+            imgs_paths = [os.path.join(self.root_path, 'centers_FL/center_'+str(center_num), 'train.txt') for center_num in range(1,19)]
+            imgs_root = os.path.join(self.root_path,'leftImg8bit_trainvaltest','leftImg8bit','train')
+            masks_root = os.path.join(self.root_path,'gtFine_trainvaltest','gtFine','train')
+
         else:
             if self.is_test:
-                imgs_path = os.path.join(self.root_path, 'super_test.txt')
+                imgs_paths = [os.path.join(self.root_path, 'centers_FL/center_'+str(center_num), 'test.txt') for center_num in range(1,19)]
+                imgs_root = os.path.join(self.root_path,'leftImg8bit_trainvaltest','leftImg8bit','train')
+                masks_root = os.path.join(self.root_path,'gtFine_trainvaltest','gtFine','train')
             else:
-                imgs_path = os.path.join(self.root_path, 'super_val.txt')
+                imgs_paths = [os.path.join(self.root_path, 'centers_FL/center_'+str(center_num), 'val.txt') for center_num in range(1,19)]
+                imgs_root = os.path.join(self.root_path,'leftImg8bit_trainvaltest','leftImg8bit','train')
+                masks_root = os.path.join(self.root_path,'gtFine_trainvaltest','gtFine','train')
 
-        im_list_file= open(imgs_path, 'r')
-        im_list = im_list_file.readlines()
+        for imgs_path in imgs_paths:
+            im_list_file= open(imgs_path, 'r')
+            im_list = im_list_file.readlines()
 
-        for img in im_list:
-            img = img.strip()
-            sl_idx = img.find('/')
-            img_name = img[sl_idx+1:]
-            data_num = img[:sl_idx]
-            center_num = data_num[5:]
-
-            if (('jpg' not in img) and ('jpeg not in img') and ('png' not in img) and ('bmp' not in img)):
-                continue
-            
-            self.img_names.append(img_name)
-            self.img_path_list.append(os.path.join(self.root_path,data_num,'images_'+center_num,img_name))
-            self.label_path_list.append(os.path.join(self.root_path,data_num,'masks_'+center_num,img_name[:-4]+'_mask.jpg'))
-            self.label_list.append('Polyp')
+            for img in im_list:
+                img = img.strip()
+                # print(img)
+                if (('jpg' not in img) and ('jpeg not in img') and ('png' not in img) and ('bmp' not in img)):
+                    continue
+                
+                self.img_names.append(img)
+                self.img_path_list.append(os.path.join(imgs_root,img[:img.find('_')],img))
+                self.label_path_list.append(os.path.join(masks_root, img[:img.find('_')], img[:-16]+"_gtFine_color.png"))
+                self.label_list.append('')
 
 
     def __getitem__(self, index):

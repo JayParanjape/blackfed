@@ -24,7 +24,7 @@ for i in range(len(datasets_list)):
     datasets.append(get_data(config, datasets_list[i]))
 
     
-num_meta_epochs = 10
+num_meta_epochs = 1000
 for i in range(num_meta_epochs):
     for j in range(len(datasets_list)):
         if i>0:
@@ -33,7 +33,7 @@ for i in range(num_meta_epochs):
             clients[j].load_state_dict(torch.load('./tmp_client_'+str(j)+'.pth'))
 
         print("Training for dataset ", datasets_list[j], " mega epoch ",i)
-        server, clients[j] = train(server, clients[j], datasets[j], j, save_path='./saved_models/'+str(datasets_list[j]), loss_string='bce + dice', device=device )
+        server, clients[j] = train(server, clients[j], datasets[j], j, save_path='./saved_models3_dice/'+str(datasets_list[j]), loss_string='dice', device=device )
         torch.cuda.empty_cache()
 
 #testing

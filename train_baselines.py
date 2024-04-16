@@ -32,7 +32,7 @@ class Loss_fxn():
 
 
 #training baselines includes the model without any split learning
-def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000, center_num=0):
+def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000, center_num=0, bs=8, lr=1e-4):
     model = model.to(device)
     os.makedirs(save_path, exist_ok=True)    
     #set up logger
@@ -53,12 +53,6 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
     loss_fxn = Loss_fxn(losses_list)
     # print("debug: loss loaded, device: ", device)
 
-    #control parameter for doing only testing
-
-    #set hyperparameters
-    bs = 8
-    lr = 1e-3
-
     tr_dataset, val_dataset, test_dataset = dataset_dict['train'], dataset_dict['val'], dataset_dict['test']
     best_val_loss = 10000
     best_tr_loss = 10000
@@ -73,6 +67,7 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
         running_union = 0
         running_corrects = 0
         running_dice = 0
+        running_iou = 0
         intermediate_count = 0
         count = 0
         preds_all = []
@@ -101,7 +96,7 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
             with torch.set_grad_enabled(True):
                 try:
                     outputs = model(inputs)
-                except ValueError() as ve:
+                except ValueError as ve:
                     outputs = model(inputs[:-1])
                     inputs = inputs[:-1]
                     labels = labels[:-1]
@@ -119,18 +114,20 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
                 running_loss += loss.item() * inputs.size(0)
                 ri, ru = running_stats(labels,preds)
                 running_dice += dice_collated(ri,ru)
+                running_iou += no_blank_miou(labels, preds)
 
         #check training performance
         if epoch%5==0:
-            epoch_loss = running_loss / ((count))
+            epoch_loss = running_loss / ((len(tr_dataset)))
             epoch_dice = running_dice / ((len(tr_dataset)))
-            print(f'Training at epoch {epoch} Train Loss: {epoch_loss:.4f} Train Dice: {epoch_dice:.4f}') 
-            logger.info('Training at epoch %d Train Loss: %f Train Dice: %f', epoch, epoch_loss, epoch_dice)
+            epoch_iou = running_iou / len(tr_dataset)
+            print(f'Training at epoch {epoch} Train Loss: {epoch_loss:.4f} Train mIoU: {epoch_iou:.4f}') 
 
         #check validation performance
         if epoch%5==0:
             running_loss = 0.0
             running_dice = 0
+            running_iou = 0
             intermediate_count = 0
             count = 0
             hds = []
@@ -156,21 +153,25 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
                     # statistics
                     running_loss += loss.item() * inputs.size(0)
                     ri, ru = running_stats(labels,preds)
+                    running_iou += no_blank_miou(labels, preds)
                     running_dice += dice_collated(ri,ru)
-                    hd = compute_hd95(preds, labels)
-                    if not math.isnan(hd):
-                        hds.append(hd)
+                    # hd = compute_hd95(preds, labels)
+                    # if not math.isnan(hd):
+                    #     hds.append(hd)
     
             #validation performance
-            epoch_loss = running_loss / ((count))
+            epoch_loss = running_loss / ((len(dataset_dict['val'])))
             epoch_dice = running_dice / ((len(dataset_dict['val'])))
-            print(f'Validating model at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}') 
-            logger.info('Validating model at epoch %d Validation Loss: %f Validation Dice: %f HD95 avg: %f', epoch, epoch_loss, epoch_dice, torch.mean(torch.Tensor(hds))) 
+            epoch_iou = running_iou / ((len(dataset_dict['val'])))
+            print(f'Validating model at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation mIoU: {epoch_iou:.4f}') 
             
             #save model
             if epoch_loss < best_val_loss:
                 best_val_loss = epoch_loss
-                torch.save(model.state_dict(), os.path.join(save_path,'client_'+str(int(center_num)-1)+'_best_val.pth'))
+                if center_num=='super':
+                    torch.save(model.state_dict(), os.path.join(save_path,'client_'+'super'+'_best_val.pth'))
+                else:
+                    torch.save(model.state_dict(), os.path.join(save_path,'client_'+str(int(center_num)-1)+'_best_val.pth'))
     return model
     
     
@@ -192,6 +193,7 @@ def test(model, dataset_dict, load_path, loss_string, device, center_num='0'):
 
     running_loss = 0.0
     running_dice = 0
+    running_iou = 0
     intermediate_count = 0
     count = 0
     hds = []
@@ -222,14 +224,16 @@ def test(model, dataset_dict, load_path, loss_string, device, center_num='0'):
             running_loss += loss.item() * inputs.size(0)
             ri, ru = running_stats(labels,preds)
             running_dice += dice_collated(ri,ru)
-            hd = compute_hd95(preds, labels)
-            if not math.isnan(hd):
-                hds.append(hd)
+            running_iou += no_blank_miou(labels, preds)
+            # hd = compute_hd95(preds, labels)
+            # if not math.isnan(hd):
+            #     hds.append(hd)
 
-    epoch_loss = running_loss / ((count))
+    epoch_loss = running_loss / ((len(dataset_dict['test'])))
     epoch_dice = running_dice / ((len(dataset_dict['test'])))
+    epoch_iou = running_iou / len(dataset_dict['test'])
     # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-    print(f'Testing model on center {str(center_num)} Test Loss: {epoch_loss:.4f} Test Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}') 
+    print(f'Testing model on center {str(center_num)} Test Loss: {epoch_loss:.4f} Test mIoU: {epoch_iou:.4f}') 
 
     return model
 

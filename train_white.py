@@ -27,7 +27,7 @@ class Loss_fxn():
         return loss
 
 
-def train(server, client, dataset_dict, j, save_path, loss_string, device):
+def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8):
     server = server.to(device)
     client = client.to(device)
     os.makedirs(save_path, exist_ok=True)    
@@ -39,10 +39,9 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
     logger.setLevel(logging.INFO)
 
     #set hyperparameters
-    num_epochs = 21
-    bs = 8
-    lr_server = 1e-3
-    lr_client = 0.001
+    num_epochs = 51
+    lr_server = 1e-4
+    lr_client = 1e-4
     sp_avg = 5
     ck = 0.01
     momentum = 0.9
@@ -74,6 +73,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
         running_union = 0
         running_corrects = 0
         running_dice = 0
+        running_iou = 0
         intermediate_count = 0
         count = 0
         preds_all = []
@@ -135,6 +135,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                 running_loss += loss.item() * inputs.size(0)
                 ri, ru = running_stats(labels,preds)
                 running_dice += dice_collated(ri,ru)
+                running_iou += no_blank_miou(labels, preds)
                 
         if epoch%5==0:
             print(count)
@@ -142,12 +143,14 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
             print(running_loss/intermediate_count)
             epoch_loss = running_loss / ((len(tr_dataset)))
             epoch_dice = running_dice / ((len(tr_dataset)))
+            epoch_iou = running_iou / ((len(tr_dataset)))
             # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-            print(f'Training at epoch {epoch} Train Loss: {epoch_loss:.4f} Train Dice: {epoch_dice:.4f}') 
+            print(f'Training at epoch {epoch} Train Loss: {epoch_loss:.4f} Train IoU: {epoch_iou:.4f}') 
 
         if epoch%20==0:
             running_loss = 0.0
             running_dice = 0
+            running_iou = 0
             intermediate_count = 0
             count = 0
             hds = []
@@ -175,9 +178,10 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
                     running_loss += loss.item() * inputs.size(0)
                     ri, ru = running_stats(labels,preds)
                     running_dice += dice_collated(ri,ru)
-                    hd = compute_hd95(preds, labels)
-                    if not math.isnan(hd):
-                        hds.append(hd)
+                    running_iou += no_blank_miou(labels, preds)
+                    # hd = compute_hd95(preds, labels)
+                    # if not math.isnan(hd):
+                    #     hds.append(hd)
     
             #validation performance
             # print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
@@ -185,14 +189,16 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device):
             # print(running_loss/intermediate_count)
             epoch_loss = running_loss / ((len(dataset_dict['val'])))
             epoch_dice = running_dice / ((len(dataset_dict['val'])))
+            epoch_iou = running_iou / ((len(dataset_dict['val'])))
+
             # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-            print(f'Training server at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}') 
+            print(f'Training server at epoch {epoch} Validation Loss: {epoch_loss:.4f} Validation mIoU: {epoch_iou:.4f}') 
                
             #save server
             if epoch_loss < best_val_loss:
                 best_val_loss = epoch_loss
-                torch.save(server.state_dict(), os.path.join(save_path,'server_best_val.pth'))
-                torch.save(client.state_dict(), os.path.join(save_path,'client_best_val.pth'))
+                torch.save(server.state_dict(), os.path.join(save_path,'server_best_val_dice.pth'))
+                torch.save(client.state_dict(), os.path.join(save_path,'client_best_val_dice.pth'))
     
     torch.save(server.state_dict(), './tmp_server.pth')
     torch.save(client.state_dict(), './tmp_client_'+str(j)+'.pth')
@@ -213,6 +219,7 @@ def test(server, client, dataset_dict, device):
     hds = []
     count = 0
     running_dice = 0
+    running_iou = 0
     for img, label, _,_ in test_dataloader:
         with torch.no_grad():
             if len(label.shape)==3:
@@ -227,15 +234,18 @@ def test(server, client, dataset_dict, device):
             # statistics
             ri, ru = running_stats(label,preds)
             running_dice += dice_collated(ri,ru)
-            hd = compute_hd95(preds, label)
-            if not math.isnan(hd):
-                hds.append(hd)
+            running_iou += no_blank_miou(label, preds)
+            # hd = compute_hd95(preds, label)
+            # if not math.isnan(hd):
+            #     hds.append(hd)
 
     #validation performance
     # print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
     # print(running_loss, intermediate_count)
     # print(running_loss/intermediate_count)
     epoch_dice = running_dice / len(dataset_dict['test'])
+    epoch_iou = running_iou / len(dataset_dict['test'])
+
     # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
-    print(f'Testing {dataset_dict["name"]}: Dice: {epoch_dice:.4f} HD95 avg: {torch.mean(torch.Tensor(hds))}')
+    print(f'Testing {dataset_dict["name"]}: mIoU: {epoch_iou:.4f}')
 

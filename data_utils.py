@@ -219,14 +219,17 @@ if __name__ == '__main__':
 
     #4
     #visualize images
-    dd = get_data(config, center_num=2)
+    config['use_norm'] = False
+    dd = get_data(config, center_num='super')
+    print(len(dd['train']))
     print(len(dd['val']))
-    ridx = 4
+    ridx = 10
     plt.imshow(dd['val'][ridx][0].permute(1,2,0))
     plt.savefig('tmp3.png')
     label = dd['val'][ridx][1]
     print(label.shape)
-    plt.imshow(label.permute(1,2,0)[:,:,13], cmap='gray')
+    print(label.max())
+    plt.imshow(label.permute(1,2,0)[:,:,18], cmap='gray')
     plt.savefig('tmp4.png')
     
 

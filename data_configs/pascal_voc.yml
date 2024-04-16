@@ -11,12 +11,12 @@ data_transforms:
   a_max: 255
   img_size: [256, 256]
   use_random_crop: False
-  use_rotation: False
+  use_rotation: True
   rotation_angle: 10
   use_saturation: False
   saturation: 2
-  use_brightness: True
+  use_brightness: False
   brightness: 2
-  use_horizontal_flip: False
+  use_horizontal_flip: True
   use_cjitter: False
   use_affine: False
