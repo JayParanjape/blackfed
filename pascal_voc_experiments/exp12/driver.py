@@ -30,7 +30,7 @@ if __name__ == '__main__':
     
     print(device, center_num, only_test, fed_learning, config_file, num_epochs, load_path)
 
-    model = DeepLabv3(n_channels=64, n_classes=20)
+    model = DeepLabv3(n_channels=64, n_classes=21)
     if fed_learning:
         model.load_state_dict(torch.load('./fed_learning_model.pth'))
 
@@ -47,13 +47,15 @@ if __name__ == '__main__':
     if not only_test:
         # model = train(model, dataset_dict, save_path = './baselines/polyp/polyp_baseline_'+str(center_num)+'/', loss_string='bce + dice', device=device, num_epochs=num_epochs)
         # model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
-        model = train(model, dataset_dict, save_path = './saved_models3_dice' , loss_string='dice', device=device, num_epochs=num_epochs, center_num=center_num, bs=8, lr=3e-4)
-        model = test(model, dataset_dict, load_path = './saved_models3_dice/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='dice', device=device)
+        model = train(model, dataset_dict, save_path = './saved_models4_dice' , loss_string='dice', device=device, num_epochs=num_epochs, center_num=center_num, bs=8, lr=1e-4, ignore_idx=0)
+        model = test(model, dataset_dict, load_path = './saved_models4_dice/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='dice', device=device, ignore_idx=0)
     else:
         #only test - give load path for model instead of save path
         # model = test(model, dataset_dict, load_path = './skin_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
         # model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(2)+'/model_best_val.pth', loss_string='bce + dice', device=device)
         # model = test(model, dataset_dict, load_path = './saved_models/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='bce + dice', device=device)
-        model = test(model, dataset_dict, load_path = load_path, loss_string='dice', device=device, center_num=center_num)
+        
+        for i in range(1,11):
+            model = test(model, dataset_dict, load_path = load_path, loss_string='dice', device=device, center_num=i, ignore_idx=0)
 
 

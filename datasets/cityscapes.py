@@ -137,4 +137,4 @@ class CITYSCAPES_Dataset(Dataset):
         label_ohe = (label_ohe>=0.5)+0
         # label_ohe = label_ohe[0]
 
-        return img, label_ohe, self.img_names[index], label_of_interest
+        return img.float(), label_ohe, self.img_names[index], label_of_interest

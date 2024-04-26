@@ -112,6 +112,6 @@ class Skin_Dataset(Dataset):
         #convert all grayscale pixels due to resizing back to 0, 1
         img, label = self.data_transform(img, label, is_train=self.is_train, apply_norm=self.apply_norm)
         label = (label>=0.5)+0
-        label = label[0]
+        # label = label[0]
 
         return img, label, self.img_names[index], label_of_interest

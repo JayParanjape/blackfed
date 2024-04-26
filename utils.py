@@ -3,19 +3,26 @@ import torch
 import torch.nn.functional as F
 import argparse
 import torch.nn as nn
-import monai
+# import monai
 
-def no_blank_miou(y_true, y_pred):
+def no_blank_miou(y_true, y_pred, ignore_idx=-1):
     #y_true and y_pred are BXCXHXW
     y_true = y_true.cpu()
     y_pred = y_pred.cpu()
-    collapsed_true = (1+torch.argmax(y_true, axis=1))*(torch.any(y_true, axis=1))
-    tmp = 0.5*torch.ones((y_pred.shape[0],1,y_pred.shape[2],y_pred.shape[3]))
-    collapsed_pred = torch.argmax(torch.cat([tmp, y_pred],dim=1), dim=1)
+    if ignore_idx==-1:
+        collapsed_true = (1+torch.argmax(y_true, axis=1))*(torch.any(y_true, axis=1))
+        tmp = 0.5*torch.ones((y_pred.shape[0],1,y_pred.shape[2],y_pred.shape[3]))
+        collapsed_pred = torch.argmax(torch.cat([tmp, y_pred],dim=1), dim=1)
 
-    intersection = torch.sum(((collapsed_pred == collapsed_true)&(collapsed_true>0)), axis=(-1,-2))
-    union = torch.sum((collapsed_pred>0),axis=(-1,-2)) + torch.sum((collapsed_true>0),axis=(-1,-2)) - intersection
-    return torch.sum(intersection/union)
+        intersection = torch.sum(((collapsed_pred == collapsed_true)&(collapsed_true>0)), axis=(-1,-2))
+        union = torch.sum((collapsed_pred>0),axis=(-1,-2)) + torch.sum((collapsed_true>0),axis=(-1,-2)) - intersection
+    else:
+        collapsed_true = (torch.argmax(y_true, dim=1))*(torch.any(y_true, dim=1))
+        collapsed_pred = torch.argmax(y_pred, dim=1)
+        intersection = torch.sum(((collapsed_pred == collapsed_true)&(collapsed_true!=ignore_idx)), axis=(-1,-2))
+        union = torch.sum((collapsed_pred!=ignore_idx),axis=(-1,-2)) + torch.sum((collapsed_true!=ignore_idx),axis=(-1,-2)) - intersection
+
+    return torch.sum((intersection+(1e-5))/(union+(1e-5)))
 
 def dice_coef(y_true, y_pred, smooth=1):
     # print(y_pred.shape, y_true.shape)
@@ -54,11 +61,18 @@ def compute_hd95(preds, gt):
     return cd.mean().item()
 
 
-def dice_loss(y_pred, y_true):
+def dice_loss(y_pred, y_true, ignore_idx=-1):
     # print('ytrue shape: ', y_true.shape)
     # print('ypred shape: ', y_pred.shape)
-    numerator = (2 * torch.sum(y_true * y_pred))
-    denominator = torch.sum(y_true + y_pred)
+    if ignore_idx>-1:
+        numerator_ignore = 2*torch.sum(y_true[:,ignore_idx,:,:]*y_pred[:,ignore_idx,:,:])
+        denominator_ignore = torch.sum(y_true[:,ignore_idx,:,:]+y_pred[:,ignore_idx,:,:])
+    else:
+        numerator_ignore = 0
+        denominator_ignore = 0
+
+    numerator = (2 * torch.sum(y_true * y_pred)) - numerator_ignore
+    denominator = torch.sum(y_true + y_pred) - denominator_ignore
 
     return 1 - ((numerator+1) / (denominator+1))
 

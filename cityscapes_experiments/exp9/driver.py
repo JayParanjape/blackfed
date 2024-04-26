@@ -24,21 +24,30 @@ for i in range(len(datasets_list)):
     datasets.append(get_data(config, datasets_list[i]))
 
     
-num_meta_epochs = 1000
-for i in range(num_meta_epochs):
-    for j in range(len(datasets_list)):
-        if i>0:
-            server.load_state_dict(torch.load('./tmp_server.pth'))
-                
-            clients[j].load_state_dict(torch.load('./tmp_client_'+str(j)+'.pth'))
+# num_meta_epochs = 1000
+# for i in range(num_meta_epochs):
+#     for j in range(len(datasets_list)):
+#         if i==0 and j==0:
+#             try:
+#                 server.load_state_dict(torch.load('./saved_models4_dice/tmp_server.pth'))
+                    
+#                 clients[j].load_state_dict(torch.load('./saved_models4_dice/tmp_client_'+str(j)+'.pth'))
+#             except:
+#                 pass
+#         print("Training for dataset ", datasets_list[j], " mega epoch ",i)
+#         server, clients[j] = train(server, clients[j], datasets[j], j, save_path='./saved_models4_dice/'+str(datasets_list[j]), loss_string='dice', device=device, tmp_save_path='./saved_models4_dice' )
+#         torch.cuda.empty_cache()
 
-        print("Training for dataset ", datasets_list[j], " mega epoch ",i)
-        server, clients[j] = train(server, clients[j], datasets[j], j, save_path='./saved_models3_dice/'+str(datasets_list[j]), loss_string='dice', device=device )
-        torch.cuda.empty_cache()
 
 #testing
 for j in range(len(datasets_list)):
-    server.load_state_dict(torch.load('./tmp_server.pth'))
-    # clients[j].load_state_dict(torch.load('./saved_models/'+str(datasets_list[j])+'/client_best_val.pth'))
-    clients[j].load_state_dict(torch.load('.'+'/tmp_client_'+str(j)+'.pth'))
-    test(server, clients[j], datasets[j], device=device)
+    server.load_state_dict(torch.load('./saved_models4_dice/tmp_server.pth'))
+    server.eval()
+    for k in range(len(datasets_list)):
+        try:
+            clients[j].load_state_dict(torch.load('./saved_models4_dice/'+str(datasets_list[j])+'/client_best_val_dice.pth'))
+        except:
+            clients[j].load_state_dict(torch.load('./saved_models4_dice/tmp_client_'+str(datasets_list[j]-1)+'.pth'))
+        clients[j].eval()
+        print("client ", datasets_list[j], "dataset ", datasets_list[k])
+        test(server, clients[j], datasets[k], device=device)

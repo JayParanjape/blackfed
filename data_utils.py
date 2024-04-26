@@ -3,6 +3,7 @@ from datasets.kvasirseg import KVASIRSEG_Dataset
 from datasets.polypgen import PolypGen_Dataset
 from datasets.cityscapes import CITYSCAPES_Dataset
 from datasets.pascal_voc import PASCAL_VOC_Dataset
+from datasets.camvid import CAMVID_Dataset
 from datasets.isic import Skin_Dataset
 from datasets.refuge import Refuge_Dataset
 from datasets.rite import RITE_Dataset
@@ -144,6 +145,16 @@ def get_data(data_config, center_num=1):
         dataset_sizes['test'] = len(dataset_dict['test'])
         dataset_sizes['pure_test'] = len(dataset_dict['pure_test'])
 
+    elif data_config['name'] == 'CAMVID':
+        dataset_dict['train'] = CAMVID_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], center_num=center_num)
+        dataset_dict['val'] = CAMVID_Dataset(data_config, shuffle_list=False, apply_norm=data_config['use_norm'], is_train=False, center_num=center_num)
+        dataset_dict['test'] = CAMVID_Dataset(data_config, shuffle_list=False, is_train=False, is_test=True, apply_norm=data_config['use_norm'], center_num=center_num)
+        dataset_dict['name'] = str(center_num)
+
+        dataset_sizes['train'] = len(dataset_dict['train'])
+        dataset_sizes['val'] = len(dataset_dict['val'])
+        dataset_sizes['test'] = len(dataset_dict['test'])
+
     elif data_config['name'] == 'PASCAL_VOC':
         dataset_dict['train'] = PASCAL_VOC_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], center_num=center_num)
         dataset_dict['val'] = PASCAL_VOC_Dataset(data_config, shuffle_list=False, apply_norm=data_config['use_norm'], is_train=False, center_num=center_num)
@@ -158,9 +169,31 @@ def get_data(data_config, center_num=1):
 
     return dataset_dict
 
-def visualize_PCA(dataset_dicts, phase='train'):
+def visualize_PCA(dataset_dict_super, dataset_dicts, phase='train'):
     images_centers = []
-    c = ['red', 'green', 'blue', 'black', 'yellow', 'cyan']
+    c = ['red', 'green', 'blue', 'black', 'yellow', 'cyan', 'orange', 'brown', 'pink', 'gray']
+    data_super = dataset_dict_super[phase]
+    images = []
+    count = 0
+    for img,_,_,_ in data_super:
+        count+=1
+        # if count>5:
+        #     continue
+        images.append(img)
+    l = len(images)
+    images = torch.stack(images,dim=0).permute(0,2,3,1).cpu().numpy().reshape((l,-1))
+    
+    # Scale data before applying PCA
+    scaling=StandardScaler()
+    
+    # Use fit and transform method 
+    scaling.fit(images)
+    Scaled_data=scaling.transform(images)
+    
+    # Set the n_components=3
+    principal=PCA(n_components=2)
+    principal.fit(Scaled_data)    
+    
     for i in range(len(dataset_dicts)):
         data = dataset_dicts[i][phase]
         images = []
@@ -173,16 +206,6 @@ def visualize_PCA(dataset_dicts, phase='train'):
         l = len(images)
         images = torch.stack(images,dim=0).permute(0,2,3,1).cpu().numpy().reshape((l,-1))
 
-        # Scale data before applying PCA
-        scaling=StandardScaler()
-        
-        # Use fit and transform method 
-        scaling.fit(images)
-        Scaled_data=scaling.transform(images)
-        
-        # Set the n_components=3
-        principal=PCA(n_components=2)
-        principal.fit(images)
         x=principal.transform(images)
         images_centers.append(x)
 
@@ -207,15 +230,16 @@ if __name__ == '__main__':
     # plt.imshow(dataset_dict['train'][0][1], cmap='gray')
     # plt.show()
 
-    #2  
-    # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3, 4, 5, 6]]
-    # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3]]
+    #2
+    # super_dataset_dict = get_data(config, center_num='super')  
+    # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3, 4]]
+    # # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3]]
     # for i in range(len(dataset_dicts)):
     #     l = len(dataset_dicts[i]['train'])
     #     print(f'data center {i+1} has {l} training points')
 
-    #3
-    # visualize_PCA(dataset_dicts)
+    # #3
+    # visualize_PCA(super_dataset_dict, dataset_dicts)
 
     #4
     #visualize images
@@ -224,12 +248,13 @@ if __name__ == '__main__':
     print(len(dd['train']))
     print(len(dd['val']))
     ridx = 10
+    torch.save(dd['val'][ridx][0],'tmp3.pt')
     plt.imshow(dd['val'][ridx][0].permute(1,2,0))
     plt.savefig('tmp3.png')
     label = dd['val'][ridx][1]
     print(label.shape)
     print(label.max())
-    plt.imshow(label.permute(1,2,0)[:,:,18], cmap='gray')
+    plt.imshow(label.permute(1,2,0)[:,:,16], cmap='gray')
     plt.savefig('tmp4.png')
     
 

@@ -45,8 +45,8 @@ if __name__ == '__main__':
     if not only_test:
         # model = train(model, dataset_dict, save_path = './baselines/polyp/polyp_baseline_'+str(center_num)+'/', loss_string='bce + dice', device=device, num_epochs=num_epochs)
         # model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
-        model = train(model, dataset_dict, save_path = './saved_models3_dice' , loss_string='dice', device=device, num_epochs=num_epochs, center_num=center_num, bs=9)
-        model = test(model, dataset_dict, load_path = './saved_models3_dice/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='dice', device=device)
+        model = train(model, dataset_dict, save_path = './saved_models4_dice' , loss_string='dice', device=device, num_epochs=num_epochs, center_num=center_num, bs=9)
+        model = test(model, dataset_dict, load_path = './saved_models4_dice/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='dice', device=device)
     else:
         #only test - give load path for model instead of save path
         # model = test(model, dataset_dict, load_path = './skin_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)

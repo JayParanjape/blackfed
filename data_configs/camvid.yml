@@ -1,0 +1,88 @@
+name: CAMVID
+root_path: '/mnt/store/jparanj1/CAMVID/archive/CamVid'
+label_list: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,2,627,28,29,30,31]
+label_names: [
+  'Animal', 
+  'Archway', 
+  'Bicyclist', 
+  'Bridge', 
+  'Building', 
+  'Car', 
+  'Cart', 
+  'Child', 
+  'Pole', 
+  'Fence',
+  'LaneMkgsDriv',
+  'LaneMkgsNonDriv',
+  'Misc_Text',
+  'MotorcycleScooter',
+  'OtherMoving',
+  'ParkingBlock',
+  'Pedestrian',
+  'Road',
+  'RoadShoulder',
+  'Sidewalk',
+  'SignSymbol',
+  'Sky',
+  'SUVPickupTruck',
+  'TrafficCone',
+  'TrafficLight',
+  'Train',
+  'Tree',
+  'Truck_Bus',
+  'Tunnel',
+  'VegetationMisc',
+  'Void',
+  'Wall'
+  ]
+palette: [
+  [64,128,64], 
+  [192, 0, 128], 
+  [0,128,192], 
+  [0,128,64], 
+  [128,0,0], 
+  [64,0,128], 
+  [64,0,192], 
+  [192,128,64], 
+  [192,192,128], 
+  [64,64,128], 
+  [128,0,192], 
+  [192,0,64], 
+  [128,128,64], 
+  [192,0,192], 
+  [128,64,64], 
+  [64,192,128], 
+  [64,64,0], 
+  [128,64,128], 
+  [128,128,192],
+  [0,0,192],
+  [192,128,128],
+  [128,128,128],
+  [64,128,192],
+  [0,0,64],
+  [0,64,64],
+  [192,64,128],
+  [128,128,0],
+  [192,128,192],
+  [64,0,64],
+  [192,192,0],
+  [0,0,0],
+  [64,192,0]
+  ]
+volume_channel: 2
+use_norm: True
+no_text_mode: True
+data_transforms:
+  a_min: 0
+  a_max: 255
+  img_size: [256, 512]
+  use_random_crop: False
+  use_rotation: False
+  rotation_angle: 10
+  use_saturation: False
+  saturation: 2
+  use_brightness: True
+  brightness: 2
+  use_horizontal_flip: False
+  use_cjitter: False
+  use_affine: False

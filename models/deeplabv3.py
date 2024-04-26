@@ -3,12 +3,12 @@ import torch.nn as nn
 import torchvision
 
 class DeepLabv3(nn.Module):
-    def __init__(self, n_channels, n_classes):
+    def __init__(self, n_channels, n_classes, use_sigmoid=False):
         super(DeepLabv3, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.DeepLabv3_Client = DeepLabv3_Client(n_channels)
-        self.DeepLabv3_Server = DeepLabv3_Server(n_channels, n_classes)
+        self.DeepLabv3_Server = DeepLabv3_Server(n_channels, n_classes, use_sigmoid)
 
     def forward(self, x):
         out = self.DeepLabv3_Server(self.DeepLabv3_Client(x))
@@ -26,7 +26,7 @@ class DeepLabv3_Client(nn.Module):
         return out
     
 class DeepLabv3_Server(nn.Module):
-    def __init__(self, n_channels, n_classes):
+    def __init__(self, n_channels, n_classes, use_sigmoid = False):
         super(DeepLabv3_Server, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
@@ -35,8 +35,10 @@ class DeepLabv3_Server(nn.Module):
         self.network.backbone.conv1 = nn.Identity()
         self.network.backbone.bn1 = nn.Identity()
         self.network.backbone.relu = nn.Identity()
-        self.soft = nn.Softmax(dim =1)
-
+        if use_sigmoid:
+            self.soft = nn.Sigmoid()
+        else:
+            self.soft = nn.Softmax(dim =1)
 
     def forward(self, x):
         out = self.network(x)['out']

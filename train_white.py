@@ -10,24 +10,25 @@ import torch.optim as optim
 import math
 
 class Loss_fxn():
-    def __init__(self, losses_list=[]):
+    def __init__(self, losses_list=[], ignore_idx=-1):
         if losses_list==[]:
             self.losses_list = [torch.nn.CrossEntropyLoss()]
         else:
             self.losses_list = losses_list
+        self.ignore_idx = ignore_idx
 
     def forward(self, pred, label):
         tmp_wt = [1,1]
         loss = 0
         for i,l in enumerate(self.losses_list):
             try:
-                loss += (tmp_wt[i]*l(pred, label))
+                loss += (tmp_wt[i]*l(pred, label, ignore_idx=self.ignore_idx))
             except:
-                loss += (tmp_wt[i]*l(pred, label.float()))
+                loss += (tmp_wt[i]*l(pred, label.float(), ignore_idx=self.ignore_idx))
         return loss
 
 
-def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8):
+def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8, lr_server=1e-4, lr_client=0.005, ck=0.01, ignore_idx = -1, tmp_save_path = '.'):
     server = server.to(device)
     client = client.to(device)
     os.makedirs(save_path, exist_ok=True)    
@@ -39,11 +40,8 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8)
     logger.setLevel(logging.INFO)
 
     #set hyperparameters
-    num_epochs = 51
-    lr_server = 1e-4
-    lr_client = 1e-4
+    num_epochs = 26
     sp_avg = 5
-    ck = 0.01
     momentum = 0.9
 
     # tr_dataloader, val_dataloader = iter(dataloader_dict['train']), iter(dataloader_dict['val'])
@@ -61,7 +59,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8)
         losses_list.append(dice_loss)
     if 'bce' in loss_string:
         losses_list.append(nn.BCELoss())
-    loss_fxn = Loss_fxn(losses_list)
+    loss_fxn = Loss_fxn(losses_list, ignore_idx=ignore_idx)
     print("debug: loss loaded")
 
     #train server
@@ -82,6 +80,9 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8)
         dataloaders = {}
         dataloaders['train'] = torch.utils.data.DataLoader(dataset_dict['train'], batch_size=bs, shuffle=True, num_workers=4)
         dataloaders['val'] = torch.utils.data.DataLoader(dataset_dict['val'], batch_size=bs, shuffle=False, num_workers=4)
+
+        server.train()
+        client.train()
         server_optimizer = optim.AdamW(server.parameters(), lr=float(lr_server))
         client_optimizer = optim.AdamW(client.parameters(), lr=float(lr_client))
 
@@ -109,10 +110,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8)
                 except ValueError as ve:
                     #if batchnorm messes up things
                     print("Avoiding batchnorm error")
-                    inputs = inputs[:-1]
-                    labels = labels[:-1]
-                    x1 = client(inputs)
-                    outputs = server(x1)
+                    break
 
                 loss=loss_fxn.forward(outputs, labels)
                 # print("Reg loss: ",reg_loss)
@@ -123,7 +121,8 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8)
                 client_optimizer.step()
 
             with torch.no_grad():
-                preds = (outputs>=0.5)
+                # preds = (outputs>=0.5)
+                preds = outputs
                 # preds_all.append(preds.cpu())
                 # gold.append(labels.cpu())
                 # epoch_dice = dice_coef(preds,labels)
@@ -135,7 +134,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8)
                 running_loss += loss.item() * inputs.size(0)
                 ri, ru = running_stats(labels,preds)
                 running_dice += dice_collated(ri,ru)
-                running_iou += no_blank_miou(labels, preds)
+                running_iou += no_blank_miou(labels, preds, ignore_idx=ignore_idx)
                 
         if epoch%5==0:
             print(count)
@@ -152,6 +151,8 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8)
             running_dice = 0
             running_iou = 0
             intermediate_count = 0
+            client.eval()
+            server.eval()
             count = 0
             hds = []
             for inputs, labels,text_idxs, text in dataloaders['val']:
@@ -172,13 +173,14 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8)
                     loss=loss_fxn.forward(outputs, labels)
                     # print("Reg loss: ",reg_loss)
                     
-                    preds = (outputs>=0.5)+0
+                    # preds = (outputs>=0.5)+0
+                    preds = outputs
 
                     # statistics
                     running_loss += loss.item() * inputs.size(0)
                     ri, ru = running_stats(labels,preds)
                     running_dice += dice_collated(ri,ru)
-                    running_iou += no_blank_miou(labels, preds)
+                    running_iou += no_blank_miou(labels, preds, ignore_idx=-1)
                     # hd = compute_hd95(preds, labels)
                     # if not math.isnan(hd):
                     #     hds.append(hd)
@@ -200,12 +202,12 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8)
                 torch.save(server.state_dict(), os.path.join(save_path,'server_best_val_dice.pth'))
                 torch.save(client.state_dict(), os.path.join(save_path,'client_best_val_dice.pth'))
     
-    torch.save(server.state_dict(), './tmp_server.pth')
-    torch.save(client.state_dict(), './tmp_client_'+str(j)+'.pth')
+    torch.save(server.state_dict(), tmp_save_path+'/tmp_server.pth')
+    torch.save(client.state_dict(), tmp_save_path+'/tmp_client_'+str(j)+'.pth')
 
     return server, client
 
-def test(server, client, dataset_dict, device):
+def test(server, client, dataset_dict, device, ignore_idx=-1):
     server = server.to(device).eval()
     client = client.to(device).eval()
     #set up logger
@@ -229,12 +231,13 @@ def test(server, client, dataset_dict, device):
             count += bs
             x1 = client(img)
             outputs= server(x1)
-            preds = (outputs>=0.5)
+            # preds = (outputs>=0.5)
+            preds = outputs
 
             # statistics
             ri, ru = running_stats(label,preds)
             running_dice += dice_collated(ri,ru)
-            running_iou += no_blank_miou(label, preds)
+            running_iou += no_blank_miou(label, preds, ignore_idx=ignore_idx)
             # hd = compute_hd95(preds, label)
             # if not math.isnan(hd):
             #     hds.append(hd)

@@ -137,7 +137,7 @@ class PASCAL_VOC_Dataset(Dataset):
             # label_ohe = label_ohe.unsqueeze(0)
             label_ohe = (label_ohe)+0
         else:
-            label_ohe = torch.zeros((20,img.shape[1], img.shape[2]))
+            label_ohe = torch.zeros((len(self.config['palette']),img.shape[1], img.shape[2]))
 
         #convert all grayscale pixels due to resizing back to 0, 1
         img, label_ohe = self.data_transform(img, label_ohe, is_train=self.is_train, apply_norm=self.apply_norm)
