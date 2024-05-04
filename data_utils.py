@@ -231,30 +231,30 @@ if __name__ == '__main__':
     # plt.show()
 
     #2
-    # super_dataset_dict = get_data(config, center_num='super')  
-    # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3, 4]]
-    # # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3]]
-    # for i in range(len(dataset_dicts)):
-    #     l = len(dataset_dicts[i]['train'])
-    #     print(f'data center {i+1} has {l} training points')
+    super_dataset_dict = get_data(config, center_num='super')  
+    dataset_dicts = [get_data(config, center_num=i) for i in range(1,19)]
+    # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3]]
+    for i in range(len(dataset_dicts)):
+        l = len(dataset_dicts[i]['train'])
+        print(f'data center {i+1} has {l} training points')
 
     # #3
     # visualize_PCA(super_dataset_dict, dataset_dicts)
 
     #4
     #visualize images
-    config['use_norm'] = False
-    dd = get_data(config, center_num='super')
-    print(len(dd['train']))
-    print(len(dd['val']))
-    ridx = 10
-    torch.save(dd['val'][ridx][0],'tmp3.pt')
-    plt.imshow(dd['val'][ridx][0].permute(1,2,0))
-    plt.savefig('tmp3.png')
-    label = dd['val'][ridx][1]
-    print(label.shape)
-    print(label.max())
-    plt.imshow(label.permute(1,2,0)[:,:,16], cmap='gray')
-    plt.savefig('tmp4.png')
+    # config['use_norm'] = False
+    # dd = get_data(config, center_num='super')
+    # print(len(dd['train']))
+    # print(len(dd['val']))
+    # ridx = 10
+    # torch.save(dd['val'][ridx][0],'tmp3.pt')
+    # plt.imshow(dd['val'][ridx][0].permute(1,2,0))
+    # plt.savefig('tmp3.png')
+    # label = dd['val'][ridx][1]
+    # print(label.shape)
+    # print(label.max())
+    # plt.imshow(label.permute(1,2,0)[:,:,16], cmap='gray')
+    # plt.savefig('tmp4.png')
     
 

@@ -341,3 +341,43 @@ class DoubleConv(nn.Module):
 
     def forward(self, x):
         return self.double_conv(x)
+
+def get_gflops(model, input_size):
+    from ptflops import get_model_complexity_info
+    import re
+    macs, params = get_model_complexity_info(model, input_size, as_strings=True, print_per_layer_stat=False, verbose=False)
+    flops = eval(re.findall(r'([\d.]+)', macs)[0])*2
+    flops_unit = re.findall(r'([A-Za-z]+)', macs)[0][0]
+    print('Computational complexity: {} {}Flops'.format(flops, flops_unit))
+    print('Number of parameters: {:<8}'.format(params))
+
+if __name__ == '__main__':
+    from deepspeed.profiling.flops_profiler import FlopsProfiler
+
+    client = UNext_Client(n_channels=64)
+    server = UNext_Server(n_channels=64, num_classes=32)
+    super_model = UNext(n_channels=64, n_classes=32)
+
+    client_prof = FlopsProfiler(client, None)
+    server_prof = FlopsProfiler(server, None)
+    super_prof = FlopsProfiler(super_model, None)
+
+    dummy = torch.ones((1,3,256,256))
+
+    client_prof.start_profile()
+    client_out = client(dummy)
+    client_prof.stop_profile()
+    client_flops = client_prof.get_total_flops()
+    print("Client flops: ", client_flops/(10**9))
+    client_prof.end_profile()
+
+    server_prof.start_profile()
+    server_out = server(client_out)
+    server_prof.stop_profile()
+    server_flops = server_prof.get_total_flops()
+    print(("Server Flops: ", server_flops/(10**9)))
+    server_prof.end_profile()
+
+    print(client_out.shape)
+    print(server_out.shape)
+    # print(server)

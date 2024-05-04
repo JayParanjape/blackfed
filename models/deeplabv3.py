@@ -67,13 +67,30 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
 
 
+def get_gflops(model, input_size):
+    from ptflops import get_model_complexity_info
+    import re
+    macs, params = get_model_complexity_info(model, input_size, as_strings=True, print_per_layer_stat=False, verbose=False)
+    flops = eval(re.findall(r'([\d.]+)', macs)[0])*2
+    flops_unit = re.findall(r'([A-Za-z]+)', macs)[0][0]
+    print('Computational complexity: {} {}Flops'.format(flops, flops_unit))
+    print('Number of parameters: {:<8}'.format(params))
+
 if __name__ == '__main__':
     client = DeepLabv3_Client(n_channels=64)
-    server = DeepLabv3_Server(n_channels=64, n_classes=20)
-    dummy = torch.ones((32,3,256,256))
+    server = DeepLabv3_Server(n_channels=64, n_classes=32)
+    super_model = DeepLabv3(n_channels=64, n_classes=32)
+    dummy = torch.ones((1,3,256,256))
     client_out = client(dummy)
+    print('Client GFLOPS: ')
+    print(tuple(dummy.shape))
+    get_gflops(client, tuple(dummy.shape[1:]))
+    print('Server GFLOPS: ')
+    get_gflops(server, tuple(client_out.shape[1:]))
+    print('Super Model GFLOPS: ')
+    get_gflops(super_model, tuple(dummy.shape[1:]))
     server_out = server(client_out)
 
     print(client_out.shape)
     print(server_out.shape)
-    print(server)
+    # print(server)

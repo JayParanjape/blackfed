@@ -27,7 +27,7 @@ class Loss_fxn():
                 loss += (tmp_wt[i]*l(pred, label.float(), ignore_idx=self.ignore_idx))
         return loss
 
-def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8, lr_server=1e-4, lr_client=0.005, ck=0.01, ignore_idx = -1, tmp_save_path = '.'):
+def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8, lr_server=1e-4, lr_client=0.005, ck=0.01, ignore_idx = -1, tmp_save_path = '.', num_epochs_client=51, num_epochs_server=26):
     server = server.to(device)
     client = client.to(device)
     os.makedirs(save_path, exist_ok=True)    
@@ -39,8 +39,6 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8,
     logger.setLevel(logging.INFO)
 
     #set hyperparameters
-    num_epochs_server = 26
-    num_epochs_client = 51
     sp_avg = 5
     momentum = 0.9
 
@@ -278,7 +276,7 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8,
                 w = w - lr_client*accum_ghat
                 torch.nn.utils.vector_to_parameters(w, client.parameters())
 
-            if epoch%20==0:
+            if epoch%5==4:
                 running_loss = 0.0
                 running_dice = 0
                 intermediate_count = 0

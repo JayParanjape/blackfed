@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../..")
 
-from train import train, test
+from train_rev import train, test
 import torch
 from models.deeplabv3 import DeepLabv3_Client, DeepLabv3_Server
 from data_utils import get_data
@@ -29,17 +29,17 @@ for i in range(num_meta_epochs):
     for j in range(len(datasets_list)):
         if i==0 and j==0:
             try:
-                server.load_state_dict(torch.load('./saved_models3_2_dice/tmp_server.pth'))
+                server.load_state_dict(torch.load('./saved_models_rev/tmp_server.pth'))
             except:
                 pass
                 
             try:
-                clients[datasets_list[j]-1].load_state_dict(torch.load('./saved_models3_2_dice/tmp_client'+str(datasets_list[j])+'.pth'))
+                clients[datasets_list[j]-1].load_state_dict(torch.load('./saved_models_rev/tmp_client'+str(datasets_list[j])+'.pth'))
             except:
                 pass
 
         print("Training for dataset ", datasets_list[j], " mega epoch ",i)
-        server, clients[datasets_list[j]-1] = train(server, clients[datasets_list[j]-1], datasets[j], datasets_list[j]-1, save_path='./saved_models3_2_dice/'+str(datasets_list[j]), loss_string='dice', device=device, bs=9, lr_client=1e-4, ck=0.001, tmp_save_path='saved_models3_2_dice' )
+        server, clients[datasets_list[j]-1] = train(server, clients[datasets_list[j]-1], datasets[j], datasets_list[j]-1, save_path='./saved_models_rev/'+str(datasets_list[j]), loss_string='dice', device=device, bs=9, lr_client=1e-4, ck=0.001, tmp_save_path='saved_models_rev', num_epochs_client=10, num_epochs_server=32 )
         torch.cuda.empty_cache()
 
 #testing

@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class Mask2Former(nn.Module):
-    def __init__(self, n_channels, n_classes, config_path):
+    def __init__(self, n_channels, n_classes, config_path, device='cpu'):
         super(Mask2Former, self).__init__()
-        self.client = Mask2Former_Client(n_channels)
-        self.server = Mask2Former_Server(n_channels, n_classes, config_path)
+        self.client = Mask2Former_Client(n_channels, device=device)
+        self.server = Mask2Former_Server(n_channels, n_classes, config_path, device=device)
 
     def forward(self, x):
         out = self.client(x)
@@ -19,24 +19,30 @@ class Mask2Former(nn.Module):
         return out
 
 class Mask2Former_Client(nn.Module):
-    def __init__(self, n_channels):
+    def __init__(self, n_channels, device='cpu'):
         super(Mask2Former_Client, self).__init__()
         self.n_channels = n_channels
 
-        self.inc = DoubleConv(3, n_channels)
+        self.inc = DoubleConv(3, n_channels).to(device)
 
     def forward(self, x):
         out = self.inc(x)
         return out
     
 class Mask2Former_Server(nn.Module):
-    def __init__(self, n_channels, n_classes, config_path='../mmsegmentation/configs/mask2former/cityscapes_blackfed.py'):
+    def __init__(self, n_channels, n_classes, config_path='../mmsegmentation/configs/mask2former/mask2former_blackfed_camvid.py', device='cpu'):
         super(Mask2Former_Server, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.config_path = config_path
         # self.network = init_model(self.config_path, checkpoint='/mnt/store/jparanj1/mask2former_r50_8xb2-90k_cityscapes-512x1024_20221202_140802-ffd9d750.pth')
-        self.network = init_model(self.config_path)
+        self.network = init_model(self.config_path).to(device)
+        for p in self.network.parameters():
+            # print(p.shape)
+            try:
+                torch.nn.init.xavier_uniform(p)
+            except:
+                torch.nn.init.uniform_(p)
         self.network.data_preprocessor = nn.Identity()
         self.network.backbone.conv1 = nn.Identity()
         self.network.backbone.bn1 = nn.Identity()
