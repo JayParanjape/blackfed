@@ -126,7 +126,7 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
             print(f'Training at epoch {epoch} Train Loss: {epoch_loss:.4f} Train mIoU: {epoch_iou:.4f}') 
 
         #check validation performance
-        if epoch%20==0:
+        if epoch%5==0:
             running_loss = 0.0
             running_dice = 0
             running_iou = 0

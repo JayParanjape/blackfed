@@ -48,14 +48,14 @@ for i in range(len(datasets_list)):
 
 #testing
 for j in range(len(datasets_list)):
-    server.load_state_dict(torch.load('./saved_models5_server51client5_rev/tmp_server_bg.pth'))
-    # server.load_state_dict(torch.load('./safe_5/saved_models5_server51client5_rev/'+str(datasets_list[j])+'/server_best_val.pth'))
+    # server.load_state_dict(torch.load('./safe_5/saved_models5_server51client5_rev/tmp_server_bg.pth'))
+    server.load_state_dict(torch.load('./safe_5_2/saved_models5_server51client5_rev/'+str(datasets_list[j])+'/server_best_val.pth'))
     server.eval()
     for k in range(len(datasets_list)):
         # try:
         #     clients[j].load_state_dict(torch.load('./safe_5/saved_models5_server51client5/'+str(datasets_list[j])+'/client_best_val.pth'))
         # except:
-        clients[j].load_state_dict(torch.load('./saved_models5_server51client5_rev/tmp_client_bg'+str(datasets_list[j]-1)+'.pth'))
+        clients[j].load_state_dict(torch.load('./safe_5_2/saved_models5_server51client5_rev/tmp_client_bg'+str(datasets_list[j]-1)+'.pth'))
         clients[j].eval()
         print("client ", datasets_list[j], "dataset ", datasets_list[k])
         test(server, clients[j], datasets[k], device=device)

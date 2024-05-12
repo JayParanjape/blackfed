@@ -234,8 +234,19 @@ if __name__ == '__main__':
     super_dataset_dict = get_data(config, center_num='super')  
     dataset_dicts = [get_data(config, center_num=i) for i in range(1,19)]
     # dataset_dicts = [get_data(config, center_num=i) for i in [1, 2, 3]]
+    print("Training stats: ")
     for i in range(len(dataset_dicts)):
         l = len(dataset_dicts[i]['train'])
+        print(f'data center {i+1} has {l} training points')
+    
+    print("Val stats: ")
+    for i in range(len(dataset_dicts)):
+        l = len(dataset_dicts[i]['val'])
+        print(f'data center {i+1} has {l} training points')
+
+    print("Testing stats: ")
+    for i in range(len(dataset_dicts)):
+        l = len(dataset_dicts[i]['test'])
         print(f'data center {i+1} has {l} training points')
 
     # #3
