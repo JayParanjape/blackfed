@@ -8,6 +8,7 @@ import logging
 from utils import *
 import torch.optim as optim
 import math
+import PIL.Image as Image
 
 class Loss_fxn():
     def __init__(self, losses_list=[], ignore_idx=-1):
@@ -349,22 +350,25 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8,
 
     return server, client
 
-def test(server, client, dataset_dict, device, ignore_idx=-1):
+def test(server, client, dataset_dict, device, ignore_idx=-1, vis_dir = './tmp_vis'):
     server = server.to(device).eval()
     client = client.to(device).eval()
+
+    #make folder for saving 
+    os.makedirs(vis_dir)
     #set up logger
     # logging.basicConfig(filename=os.path.join('saved_models',"testing_progress.log"),
     #                 format='%(message)s',
     #                 filemode='a')
     # logger = logging.getLogger()
     # logger.setLevel(logging.INFO)
-    bs = 8
+    bs = 1
     test_dataloader = torch.utils.data.DataLoader(dataset_dict['test'], batch_size=bs, shuffle=False, num_workers=4)
     hds = []
     count = 0
     running_dice = 0
     running_iou = 0
-    for img, label, _,_ in test_dataloader:
+    for img, label, img_name, _ in test_dataloader:
         with torch.no_grad():
             if len(label.shape)==3:
                 label = label.unsqueeze(1)
@@ -383,6 +387,8 @@ def test(server, client, dataset_dict, device, ignore_idx=-1):
             # hd = compute_hd95(preds, label)
             # if not math.isnan(hd):
             #     hds.append(hd)
+            #save figure
+            save_visual(preds, label, dataset_dict['test'].palette, os.path.join(vis_dir,img_name))
 
     #validation performance
     # print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
@@ -392,4 +398,23 @@ def test(server, client, dataset_dict, device, ignore_idx=-1):
     epoch_iou = running_iou / len(dataset_dict['test'])
     # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
     print(f'Testing {dataset_dict["name"]}: mIoU: {epoch_iou:.4f}')
+
+def save_visual(preds, label, palette, name):
+    if len(label.shape)==4:
+        label=label[0]
+    if len(preds.shape)==4:
+        preds = preds[0]
+    argmax_pred = torch.argmax(preds, dim=0)
+    vis_out = torch.zeros(preds.shape[1], preds.shape[2], 3)
+    assert preds.shape[0] == len(palette)
+    for i in vis_out.shape[0]:
+        for j in vis_out.shape[1]:
+            vis_out[i][j] = palette[argmax_pred[i,j]]
+    vis_out = vis_out.cpu().numpy()
+    im = Image.fromarray(vis_out)
+    if 'png' in name:
+        im.save(name)
+    else:
+        im.save(name+'.png')
+
 

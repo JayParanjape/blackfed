@@ -4,6 +4,6 @@ for i in 0 1 2 3 4 5; do
     echo "Testing for model $i \n" >> testing_progress_re.txt
 
     for j in 1 2 3 4 5 6; do 
-        python -u driver.py cuda:7 ${j} True False ../../data_configs/polypgen.yml 1000 saved_models3_dice/client_${i}_best_val.pth >> testing_progress_re.txt
+        python -u driver.py cuda:4 ${j} True False ../../data_configs/polypgen.yml 1000 saved_models3_dice/client_${i}_best_val.pth
     done
 done

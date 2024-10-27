@@ -8,6 +8,9 @@ import logging
 from utils import *
 import torch.optim as optim
 import math
+from PIL import Image
+# from cmaes import CMA
+
 
 class Loss_fxn():
     def __init__(self, losses_list=[], ignore_idx=-1):
@@ -96,41 +99,57 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8,
                 inputs = inputs.to(device)
                 labels = labels.to(device)
                 w = torch.nn.utils.parameters_to_vector(client.parameters())
+                optimizer = CMA(mean=np.zeros(len(w)), sigma=1.3)
                 N_params = w.shape[0]
 
                 ghats = []
+
                 for spk in range(sp_avg):
-                #! Segmented Uniform [-1, 0.5] U [0.5, 1]
-                    p_side = (torch.rand(N_params).reshape(-1,1) + 1)/2
-                    samples = torch.cat([p_side,-p_side], dim=1)
-                    perturb = torch.gather(samples, 1, torch.bernoulli(torch.ones_like(p_side)/2).type(torch.int64)).reshape(-1).to(w.device)
-                    
-                    del samples; del p_side
+                    solutions = []
+                    for _ in range(optimizer.population_size):
+                        x = optimizer.ask()
+                        torch.nn.utils.vector_to_parameters(x, client.parameters())
 
-                    #* two-side Approximated Numerical Gradient
-                    w_r = w + ck*perturb
-                    w_l = w - ck*perturb
-
-                    torch.nn.utils.vector_to_parameters(w_r, client.parameters())
-                    x1 = client(inputs)
-                    outputs = server(x1)
-                    loss_right = loss_fxn.forward(outputs, labels)
-
-                    torch.nn.utils.vector_to_parameters(w_l, client.parameters())
-                    x2 = client(inputs)
-                    outputs = server(x2)
-                    loss_left = loss_fxn.forward(outputs, labels)
-
-                    ghat = (loss_right - loss_left)/((2*ck)*perturb)
-                    ghats.append(ghat)
-                torch.cat(ghats, dim=0).mean(dim=0)
-                if count==1:
-                    m = ghat
-                else:
-                    m = momentum*m + ghat
-                accum_ghat = ghat + momentum*m
-                w = w - lr_client*accum_ghat
+                        outputs = server(client(inputs))
+                        loss_cma = loss_fxn.forward(outputs, labels)
+                        solutions.append((x, loss_cma))
+                    optimizer.tell(solutions)
+                w = x
                 torch.nn.utils.vector_to_parameters(w, client.parameters())
+
+
+                # for spk in range(sp_avg):
+                # #! Segmented Uniform [-1, 0.5] U [0.5, 1]
+                #     p_side = (torch.rand(N_params).reshape(-1,1) + 1)/2
+                #     samples = torch.cat([p_side,-p_side], dim=1)
+                #     perturb = torch.gather(samples, 1, torch.bernoulli(torch.ones_like(p_side)/2).type(torch.int64)).reshape(-1).to(w.device)
+                    
+                #     del samples; del p_side
+
+                #     #* two-side Approximated Numerical Gradient
+                #     w_r = w + ck*perturb
+                #     w_l = w - ck*perturb
+
+                #     torch.nn.utils.vector_to_parameters(w_r, client.parameters())
+                #     x1 = client(inputs)
+                #     outputs = server(x1)
+                #     loss_right = loss_fxn.forward(outputs, labels)
+
+                #     torch.nn.utils.vector_to_parameters(w_l, client.parameters())
+                #     x2 = client(inputs)
+                #     outputs = server(x2)
+                #     loss_left = loss_fxn.forward(outputs, labels)
+
+                #     ghat = (loss_right - loss_left)/((2*ck)*perturb)
+                #     ghats.append(ghat)
+                # torch.cat(ghats, dim=0).mean(dim=0)
+                # if count==1:
+                #     m = ghat
+                # else:
+                #     m = momentum*m + ghat
+                # accum_ghat = ghat + momentum*m
+                # w = w - lr_client*accum_ghat
+                # torch.nn.utils.vector_to_parameters(w, client.parameters())
 
             if epoch%5==4:
                 running_loss = 0.0
@@ -347,22 +366,29 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8,
 
     return server, client
 
-def test(server, client, dataset_dict, device, ignore_idx=-1):
+def test(server, client, dataset_dict, device, ignore_idx=-1, vis_dir = './tmp_vis'):
     server = server.to(device).eval()
     client = client.to(device).eval()
+    #make folder for saving 
+    os.makedirs(vis_dir, exist_ok=True)
     #set up logger
     # logging.basicConfig(filename=os.path.join('saved_models',"testing_progress.log"),
     #                 format='%(message)s',
     #                 filemode='a')
     # logger = logging.getLogger()
     # logger.setLevel(logging.INFO)
-    bs = 8
+    bs = 1
     test_dataloader = torch.utils.data.DataLoader(dataset_dict['test'], batch_size=bs, shuffle=False, num_workers=4)
     hds = []
     count = 0
     running_dice = 0
     running_iou = 0
-    for img, label, _,_ in test_dataloader:
+    count_idx = 0
+    for img, label, img_name, txt in test_dataloader:
+        count_idx+=1
+        if count_idx%50!=0:
+            continue
+        print("img name: ", img_name)
         with torch.no_grad():
             if len(label.shape)==3:
                 label = label.unsqueeze(1)
@@ -381,6 +407,11 @@ def test(server, client, dataset_dict, device, ignore_idx=-1):
             # hd = compute_hd95(preds, label)
             # if not math.isnan(hd):
             #     hds.append(hd)
+            #save figure
+            try:
+                save_visual(preds, label, dataset_dict['test'].palette, os.path.join(vis_dir,img_name))
+            except:
+                save_visual(preds, label, dataset_dict['test'].palette, os.path.join(vis_dir,img_name[0]))
 
     #validation performance
     # print("HD95 avg: ", torch.mean(torch.Tensor(hds)))
@@ -391,3 +422,26 @@ def test(server, client, dataset_dict, device, ignore_idx=-1):
     # epoch_dice = dice_coef(torch.cat(preds_all,axis=0),torch.cat(gold,axis=0))
     print(f'Testing {dataset_dict["name"]}: mIoU: {epoch_iou:.4f}')
 
+def save_visual(preds, label, palette, name):
+    if len(label.shape)==4:
+        label=label[0]
+    if len(preds.shape)==4:
+        preds = preds[0]
+    if preds.shape[0]==1:
+        vis_out = ((preds[0]>=0.5)+0)*255
+    else:
+        argmax_pred = torch.argmax(preds, dim=0)
+        vis_out = torch.zeros(preds.shape[1], preds.shape[2], 3)
+        assert preds.shape[0] == len(palette)
+        for i in range(vis_out.shape[0]):
+            for j in range(vis_out.shape[1]):
+                if preds[argmax_pred[i][j]][i][j] <0.5:
+                    vis_out[i][j] = torch.Tensor([0,0,0])
+                else:
+                    vis_out[i][j] = torch.Tensor(palette[argmax_pred[i,j]])
+    vis_out = vis_out.cpu().numpy().astype(np.uint8)
+    im = Image.fromarray(vis_out)
+    if 'png' in name:
+        im.save(name)
+    else:
+        im.save(name+'.png')

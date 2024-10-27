@@ -12,6 +12,7 @@ import math
 from models.deeplabv3 import DeepLabv3
 from data_utils import get_data
 import yaml
+from PIL import Image
 
 #define the loss function based on the input loss string
 class Loss_fxn():
@@ -181,11 +182,29 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
                 torch.save(model.state_dict(), os.path.join(save_path,'client_'+str(int(center_num)-1)+'_best_val.pth'))
     return model
     
-    
-def test(model, dataset_dict, load_path, loss_string, device, center_num='0'):
+def save_visual(preds, label, palette, name):
+    if len(label.shape)==4:
+        label=label[0]
+    if len(preds.shape)==4:
+        preds = preds[0]
+    argmax_pred = torch.argmax(preds, dim=0)
+    vis_out = torch.zeros(preds.shape[1], preds.shape[2], 3)
+    assert preds.shape[0] == len(palette)
+    for i in range(vis_out.shape[0]):
+        for j in range(vis_out.shape[1]):
+            vis_out[i][j] = torch.Tensor(palette[argmax_pred[i,j]])
+    vis_out = vis_out.cpu().numpy().astype(np.uint8)
+    im = Image.fromarray(vis_out)
+    if 'png' in name:
+        im.save(name)
+    else:
+        im.save(name+'.png') 
+
+def test(model, dataset_dict, load_path, loss_string, device, center_num='0', vis_dir = './tmp_vis'):
     #test on test dataset
     model.load_state_dict(torch.load(load_path), strict=True)
     model = model.to(device).eval()
+    os.makedirs(vis_dir, exist_ok=True)
 
     #define loss function
     losses_list = []
@@ -206,10 +225,10 @@ def test(model, dataset_dict, load_path, loss_string, device, center_num='0'):
     running_iou = 0.0
     count = 0
     hds = []
-    bs=8
+    bs=1
     dataloader = torch.utils.data.DataLoader(dataset_dict['test'], batch_size=bs, shuffle=True, num_workers=4)
 
-    for inputs, labels,text_idxs, text in dataloader:
+    for inputs, labels,img_name, text in dataloader:
     # for inputs, labels,text_idxs, text, pt, pt_label in dataloaders[phase]:
         count+=1
         intermediate_count += inputs.shape[0]
@@ -227,6 +246,10 @@ def test(model, dataset_dict, load_path, loss_string, device, center_num='0'):
             
             # preds = (outputs>=0.5)
             preds = outputs
+            try:
+                save_visual(preds, labels, dataset_dict['test'].palette, os.path.join(vis_dir,img_name))
+            except:
+                save_visual(preds, labels, dataset_dict['test'].palette, os.path.join(vis_dir,img_name[0]))
 
 
             # statistics
@@ -286,6 +309,7 @@ if __name__ == '__main__':
         # model = test(model, dataset_dict, load_path = './skin_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
         # model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(2)+'/model_best_val.pth', loss_string='bce + dice', device=device)
         # model = test(model, dataset_dict, load_path = './saved_models/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='bce + dice', device=device)
-        model = test(model, dataset_dict, load_path = load_path, loss_string='dice', device=device, center_num=center_num)
+        cl_idx = load_path.find('client')
+        model = test(model, dataset_dict, load_path = load_path, loss_string='dice', device=device, center_num=center_num, vis_dir=load_path[cl_idx:9+cl_idx]+"_dataset_"+str(center_num))
 
 

@@ -181,7 +181,8 @@ def train(model, dataset_dict, save_path, loss_string, device, num_epochs = 2000
     
 def test(model, dataset_dict, load_path, loss_string, device, center_num='0', ignore_idx=-1):
     #test on test dataset
-    model.load_state_dict(torch.load(load_path), strict=True)
+    if load_path!='':
+        model.load_state_dict(torch.load(load_path), strict=True)
     model = model.to(device).eval()
 
     #define loss function
@@ -266,7 +267,14 @@ if __name__ == '__main__':
     n_classes = len(config['label_names'])
     model = DeepLabv3(n_channels=64, n_classes=n_classes, use_sigmoid=(n_classes == 1))
     if fed_learning:
-        model.load_state_dict(torch.load('./fed_learning_model.pth'))
+        # model.load_state_dict(torch.load('./fed_learning_model.pth'))
+        most_weights = torch.load('./fed_learning_model.pth')
+        remaining_weights = torch.load('./saved_models/client_'+str((int(center_num)+2)%4)+'_best_val.pth')
+        for k in most_weights:
+            if 'classifier' in k:
+                most_weights[k] = remaining_weights[k]
+        model.load_state_dict(most_weights)
+
 
     if center_num=='super':
         dataset_dict = get_data(config, center_num='super')
@@ -284,6 +292,7 @@ if __name__ == '__main__':
         # model = test(model, dataset_dict, load_path = './skin_baseline_'+str(center_num)+'/model_best_val.pth', loss_string='bce + dice', device=device)
         # model = test(model, dataset_dict, load_path = './baselines/polyp/polyp_baseline_'+str(2)+'/model_best_val.pth', loss_string='bce + dice', device=device)
         # model = test(model, dataset_dict, load_path = './saved_models/client_'+str(int(center_num)-1)+'_best_val.pth', loss_string='bce + dice', device=device)
-        model = test(model, dataset_dict, load_path = load_path, loss_string='dice', device=device, center_num=center_num)
+        # model = test(model, dataset_dict, load_path = load_path, loss_string='dice', device=device, center_num=center_num)
+        model = test(model, dataset_dict, load_path = '', loss_string='dice', device=device, center_num=center_num)
 
 

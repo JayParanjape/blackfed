@@ -23,6 +23,7 @@ class CAMVID_Dataset(Dataset):
         self.num_classes = len(self.label_names)
         self.config = config
         self.apply_norm = apply_norm
+        self.palette = config['palette']
 
         if center_num=='super':
             self.populate_lists_super()

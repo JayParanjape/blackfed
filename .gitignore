@@ -4,3 +4,5 @@
 save_models
 dumpyard
 __pycache__
+*.png
+*.jpg

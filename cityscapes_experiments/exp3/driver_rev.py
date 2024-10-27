@@ -58,4 +58,4 @@ for j in range(len(datasets_list)):
         clients[j].load_state_dict(torch.load('./safe/saved_models_server31client10_rev/tmp_client_bg'+str(datasets_list[j]-1)+'.pth'))
         clients[j].eval()
         print("client ", datasets_list[j], "dataset ", datasets_list[k])
-        test(server, clients[j], datasets[k], device=device)
+        test(server, clients[j], datasets[k], device=device, vis_dir="client_"+str(j+1)+"_dataset_"+str(k+1))

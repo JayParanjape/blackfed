@@ -23,6 +23,8 @@ class Skin_Dataset(Dataset):
         self.num_classes = len(self.label_names)
         self.config = config
         self.apply_norm = apply_norm
+        self.palette = [[255,255,255]]
+
 
         if center_num=='super':
             self.populate_lists_super()

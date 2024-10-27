@@ -28,3 +28,12 @@ if mode=='fedavg':
     
     #save the federated model at path expected by the clients
     torch.save(fed_wt, './fed_learning_model.pth')
+
+elif mode=='fedper':
+    for i in range(1, len(nk)):
+        wt = torch.load(os.path.join(center_model_root,'client_'+str(i)+'_best_val.pth'), map_location='cpu')
+        for k,v in wt.items():
+            if 'classifier' not in k:
+                fed_wt[k] += v*frac_nk[i]
+    torch.save(fed_wt, './fed_learning_model.pth')
+    
