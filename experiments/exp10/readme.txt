@@ -1,1 +1,0 @@
-Fedavg on SKIN dataset

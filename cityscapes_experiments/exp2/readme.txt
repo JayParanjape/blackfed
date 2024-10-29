@@ -1,1 +1,0 @@
-Mask2Former on Cityscapes, blackbox roundrobin fashion

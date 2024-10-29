@@ -99,57 +99,43 @@ def train(server, client, dataset_dict, j, save_path, loss_string, device, bs=8,
                 inputs = inputs.to(device)
                 labels = labels.to(device)
                 w = torch.nn.utils.parameters_to_vector(client.parameters())
-                optimizer = CMA(mean=np.zeros(len(w)), sigma=1.3)
                 N_params = w.shape[0]
-
                 ghats = []
 
+
+
                 for spk in range(sp_avg):
-                    solutions = []
-                    for _ in range(optimizer.population_size):
-                        x = optimizer.ask()
-                        torch.nn.utils.vector_to_parameters(x, client.parameters())
-
-                        outputs = server(client(inputs))
-                        loss_cma = loss_fxn.forward(outputs, labels)
-                        solutions.append((x, loss_cma))
-                    optimizer.tell(solutions)
-                w = x
-                torch.nn.utils.vector_to_parameters(w, client.parameters())
-
-
-                # for spk in range(sp_avg):
-                # #! Segmented Uniform [-1, 0.5] U [0.5, 1]
-                #     p_side = (torch.rand(N_params).reshape(-1,1) + 1)/2
-                #     samples = torch.cat([p_side,-p_side], dim=1)
-                #     perturb = torch.gather(samples, 1, torch.bernoulli(torch.ones_like(p_side)/2).type(torch.int64)).reshape(-1).to(w.device)
+                #! Segmented Uniform [-1, 0.5] U [0.5, 1]
+                    p_side = (torch.rand(N_params).reshape(-1,1) + 1)/2
+                    samples = torch.cat([p_side,-p_side], dim=1)
+                    perturb = torch.gather(samples, 1, torch.bernoulli(torch.ones_like(p_side)/2).type(torch.int64)).reshape(-1).to(w.device)
                     
-                #     del samples; del p_side
+                    del samples; del p_side
 
-                #     #* two-side Approximated Numerical Gradient
-                #     w_r = w + ck*perturb
-                #     w_l = w - ck*perturb
+                    #* two-side Approximated Numerical Gradient
+                    w_r = w + ck*perturb
+                    w_l = w - ck*perturb
 
-                #     torch.nn.utils.vector_to_parameters(w_r, client.parameters())
-                #     x1 = client(inputs)
-                #     outputs = server(x1)
-                #     loss_right = loss_fxn.forward(outputs, labels)
+                    torch.nn.utils.vector_to_parameters(w_r, client.parameters())
+                    x1 = client(inputs)
+                    outputs = server(x1)
+                    loss_right = loss_fxn.forward(outputs, labels)
 
-                #     torch.nn.utils.vector_to_parameters(w_l, client.parameters())
-                #     x2 = client(inputs)
-                #     outputs = server(x2)
-                #     loss_left = loss_fxn.forward(outputs, labels)
+                    torch.nn.utils.vector_to_parameters(w_l, client.parameters())
+                    x2 = client(inputs)
+                    outputs = server(x2)
+                    loss_left = loss_fxn.forward(outputs, labels)
 
-                #     ghat = (loss_right - loss_left)/((2*ck)*perturb)
-                #     ghats.append(ghat)
-                # torch.cat(ghats, dim=0).mean(dim=0)
-                # if count==1:
-                #     m = ghat
-                # else:
-                #     m = momentum*m + ghat
-                # accum_ghat = ghat + momentum*m
-                # w = w - lr_client*accum_ghat
-                # torch.nn.utils.vector_to_parameters(w, client.parameters())
+                    ghat = (loss_right - loss_left)/((2*ck)*perturb)
+                    ghats.append(ghat)
+                torch.cat(ghats, dim=0).mean(dim=0)
+                if count==1:
+                    m = ghat
+                else:
+                    m = momentum*m + ghat
+                accum_ghat = ghat + momentum*m
+                w = w - lr_client*accum_ghat
+                torch.nn.utils.vector_to_parameters(w, client.parameters())
 
             if epoch%5==4:
                 running_loss = 0.0

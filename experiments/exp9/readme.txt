@@ -1,1 +1,0 @@
-Fedavg on Polypgen dataset
