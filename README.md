@@ -17,7 +17,9 @@ conda activate blackfed
 - datasets - data files for getting the centerwise data
 
 ## Data Splits
-Coming Soon
+[GDrive](https://drive.google.com/drive/folders/1xsgDNEOagXFKHuOPqP1NP0bDQDuByG-C?usp=sharing)
+
+Note: Please download the datasets from original sources. the splits contain the train test val filenames
 
 ## Pretrained Models
 Coming Soon
